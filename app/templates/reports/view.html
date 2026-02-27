@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block page_title %}{{ report.title }}{% endblock %}
+
+{% block content %}
+<!-- Header actions -->
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+  <div class="d-flex gap-2 flex-wrap">
+    <span class="badge-status badge-{{ report.status|lower|replace(' ','-') }} fs-6">{{ report.status }}</span>
+    {% if report.overall_risk %}
+      <span class="badge-sev badge-{{ report.overall_risk|lower }} fs-6">{{ report.overall_risk }}</span>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('vulns.create', report_id=report.id) }}" class="btn btn-sm btn-outline-accent">
+      <i class="bi bi-plus-lg me-1"></i>Adicionar Vuln.
+    </a>
+    <a href="{{ url_for('reports.generate_pdf', report_id=report.id) }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-file-pdf me-1"></i>Gerar PDF
+    </a>
+    <a href="{{ url_for('reports.edit', report_id=report.id) }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+  </div>
+</div>
+
+<!-- Report Info -->
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card-dark h-100">
+      <div class="card-dark-header">
+        <i class="bi bi-info-circle me-2 text-accent"></i>Detalhes do Relatório
+      </div>
+      <div class="card-dark-body">
+        <div class="row g-2">
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Cliente</span>
+              <span class="detail-value">{{ report.client.name }}</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Tipo de Teste</span>
+              <span class="detail-value">{{ report.report_type }}</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Pentester</span>
+              <span class="detail-value">{{ report.author.full_name }}</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Versão</span>
+              <span class="detail-value">{{ report.version }}</span>
+            </div>
+          </div>
+          {% if report.start_date %}
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Início</span>
+              <span class="detail-value">{{ report.start_date.strftime('%d/%m/%Y') }}</span>
+            </div>
+          </div>
+          {% endif %}
+          {% if report.end_date %}
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Fim</span>
+              <span class="detail-value">{{ report.end_date.strftime('%d/%m/%Y') }}</span>
+            </div>
+          </div>
+          {% endif %}
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Criado em</span>
+              <span class="detail-value">{{ report.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Atualizado</span>
+              <span class="detail-value">{{ report.updated_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vuln Summary -->
+  <div class="col-md-4">
+    <div class="card-dark h-100">
+      <div class="card-dark-header">
+        <i class="bi bi-shield-exclamation me-2 text-accent"></i>Resumo de Vulnerabilidades
+      </div>
+      <div class="card-dark-body">
+        {% for sev, color_class in [('Critical','critical'),('High','high'),('Medium','medium'),('Low','low'),('Informational','info')] %}
+        <div class="sev-row">
+          <span class="badge-sev badge-{{ color_class }}">{{ sev }}</span>
+          <div class="sev-bar-wrap">
+            <div class="sev-bar sev-bar-{{ color_class }}"
+                 style="width:{{ (counts[sev] / ([counts.values()|sum, 1]|max) * 100)|int }}%"></div>
+          </div>
+          <span class="sev-count">{{ counts[sev] }}</span>
+        </div>
+        {% endfor %}
+        <div class="sev-total mt-3">
+          <span class="text-muted small">Total:</span>
+          <span class="fw-bold ms-1">{{ counts.values()|sum }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Text sections -->
+{% for section, icon, content in [
+    ('Resumo Executivo', 'bi-file-text', report.executive_summary),
+    ('Escopo', 'bi-diagram-3', report.scope),
+    ('Metodologia', 'bi-gear', report.methodology),
+    ('Conclusão', 'bi-check-circle', report.conclusion)
+] %}
+{% if content %}
+<div class="card-dark mb-3">
+  <div class="card-dark-header">
+    <i class="{{ icon }} me-2 text-accent"></i>{{ section }}
+  </div>
+  <div class="card-dark-body">
+    <p class="text-muted mb-0" style="white-space:pre-wrap">{{ content }}</p>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Vulnerabilities -->
+<div class="card-dark mt-4">
+  <div class="card-dark-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-bug-fill me-2 text-accent"></i>Vulnerabilidades ({{ vulns|length }})</span>
+    <a href="{{ url_for('vulns.create', report_id=report.id) }}" class="btn btn-xs btn-accent">
+      <i class="bi bi-plus-lg me-1"></i>Adicionar
+    </a>
+  </div>
+  <div class="card-dark-body p-0">
+    {% if vulns %}
+    {% for vuln in vulns %}
+    <div class="vuln-item">
+      <div class="vuln-item-header">
+        <div class="vuln-item-left">
+          <span class="badge-sev badge-{{ vuln.severity|lower }}">{{ vuln.severity }}</span>
+          <h6 class="vuln-item-title">{{ vuln.title }}</h6>
+          {% if vuln.cve_id %}
+            <span class="cve-badge">{{ vuln.cve_id }}</span>
+          {% endif %}
+        </div>
+        <div class="vuln-item-right">
+          {% if vuln.cvss_score %}
+            <span class="cvss-score cvss-{{ 'critical' if vuln.cvss_score >= 9 else 'high' if vuln.cvss_score >= 7 else 'medium' if vuln.cvss_score >= 4 else 'low' }}">
+              CVSS {{ '%.1f'|format(vuln.cvss_score) }}
+            </span>
+          {% endif %}
+          <span class="badge-status badge-{{ vuln.status|lower|replace(' ','-') }}">{{ vuln.status }}</span>
+          <a href="{{ url_for('vulns.edit', vuln_id=vuln.id) }}" class="btn btn-xs btn-outline-secondary">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <form method="POST" action="{{ url_for('vulns.delete', vuln_id=vuln.id) }}" class="d-inline"
+                onsubmit="return confirm('Excluir esta vulnerabilidade?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-xs btn-outline-danger">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {% if vuln.affected_component %}
+        <div class="vuln-component"><i class="bi bi-hdd me-1"></i>{{ vuln.affected_component }}</div>
+      {% endif %}
+
+      <div class="vuln-details" id="vuln-{{ vuln.id }}">
+        {% if vuln.description %}
+          <div class="vuln-section">
+            <div class="vuln-section-title">Descrição</div>
+            <p class="text-muted small mb-0" style="white-space:pre-wrap">{{ vuln.description }}</p>
+          </div>
+        {% endif %}
+        {% if vuln.proof_of_concept %}
+          <div class="vuln-section">
+            <div class="vuln-section-title">Prova de Conceito</div>
+            <pre class="code-block">{{ vuln.proof_of_concept }}</pre>
+          </div>
+        {% endif %}
+        {% if vuln.impact %}
+          <div class="vuln-section">
+            <div class="vuln-section-title">Impacto</div>
+            <p class="text-muted small mb-0" style="white-space:pre-wrap">{{ vuln.impact }}</p>
+          </div>
+        {% endif %}
+        {% if vuln.recommendation %}
+          <div class="vuln-section">
+            <div class="vuln-section-title text-success">Recomendação</div>
+            <p class="text-muted small mb-0" style="white-space:pre-wrap">{{ vuln.recommendation }}</p>
+          </div>
+        {% endif %}
+        {% if vuln.references %}
+          <div class="vuln-section">
+            <div class="vuln-section-title">Referências</div>
+            <p class="text-muted small mb-0" style="white-space:pre-wrap">{{ vuln.references }}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <button class="btn btn-xs btn-outline-secondary mt-2 toggle-vuln"
+              data-target="vuln-{{ vuln.id }}" onclick="toggleVuln(this)">
+        <i class="bi bi-chevron-down me-1"></i>Ver detalhes
+      </button>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state py-4">
+      <i class="bi bi-bug"></i>
+      <p>Nenhuma vulnerabilidade adicionada</p>
+      <a href="{{ url_for('vulns.create', report_id=report.id) }}" class="btn btn-sm btn-accent">
+        <i class="bi bi-plus-lg me-1"></i>Adicionar Vulnerabilidade
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleVuln(btn) {
+  const target = document.getElementById(btn.dataset.target);
+  const isHidden = target.style.display === 'none' || target.style.display === '';
+  target.style.display = isHidden ? 'block' : 'none';
+  btn.innerHTML = isHidden
+    ? '<i class="bi bi-chevron-up me-1"></i>Ocultar detalhes'
+    : '<i class="bi bi-chevron-down me-1"></i>Ver detalhes';
+}
+// Start all collapsed
+document.querySelectorAll('.vuln-details').forEach(d => d.style.display = 'none');
+</script>
+{% endblock %}

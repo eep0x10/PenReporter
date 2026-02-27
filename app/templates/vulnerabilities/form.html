@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {% if report %}
+        <input type="hidden" name="report_id" value="{{ report.id }}">
+      {% endif %}
+
+      <!-- Basic Info -->
+      <div class="card-dark mb-4">
+        <div class="card-dark-header">
+          <i class="bi bi-bug-fill me-2 text-accent"></i>Informações da Vulnerabilidade
+        </div>
+        <div class="card-dark-body">
+          <div class="row g-3">
+            {% if not report %}
+            <div class="col-12">
+              <label class="form-label">Relatório <span class="text-danger">*</span></label>
+              <select name="report_id" class="form-select" required>
+                <option value="">Selecione um relatório...</option>
+                {% for r in reports %}
+                  <option value="{{ r.id }}" {% if vuln and vuln.report_id == r.id %}selected{% endif %}>
+                    {{ r.title }} — {{ r.client.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            {% else %}
+            <div class="col-12">
+              <label class="form-label">Relatório</label>
+              <div class="form-control disabled-input">
+                <i class="bi bi-file-earmark-text me-2 text-muted"></i>
+                <a href="{{ url_for('reports.view', report_id=report.id) }}" class="text-accent">
+                  {{ report.title }}
+                </a>
+                <span class="text-muted ms-2">— {{ report.client.name }}</span>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="col-12">
+              <label class="form-label">{{ form.title.label.text }} <span class="text-danger">*</span></label>
+              {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""),
+                            placeholder="Ex: SQL Injection no endpoint /api/users") }}
+              {% if form.title.errors %}
+                <div class="invalid-feedback">{{ form.title.errors[0] }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">{{ form.severity.label.text }}</label>
+              {{ form.severity(class="form-select severity-select", id="severitySelect") }}
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">{{ form.status.label.text }}</label>
+              {{ form.status(class="form-select") }}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">{{ form.cvss_score.label.text }}</label>
+              {{ form.cvss_score(class="form-control", placeholder="9.8", step="0.1", min="0", max="10", type="number") }}
+              {% if form.cvss_score.errors %}
+                <div class="form-text text-danger">{{ form.cvss_score.errors[0] }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">{{ form.cve_id.label.text }}</label>
+              {{ form.cve_id(class="form-control", placeholder="CVE-2024-XXXXX") }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.cvss_vector.label.text }}</label>
+              {{ form.cvss_vector(class="form-control font-mono",
+                                  placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H") }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.affected_component.label.text }}</label>
+              {{ form.affected_component(class="form-control",
+                                         placeholder="Ex: https://target.com/api/v1/users") }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="card-dark mb-4">
+        <div class="card-dark-header">
+          <i class="bi bi-card-text me-2 text-accent"></i>Detalhes Técnicos
+        </div>
+        <div class="card-dark-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">{{ form.description.label.text }}</label>
+              {{ form.description(class="form-control", rows="4",
+                                  placeholder="Descrição detalhada da vulnerabilidade...") }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.proof_of_concept.label.text }}</label>
+              {{ form.proof_of_concept(class="form-control font-mono", rows="6",
+                                       placeholder="curl -X POST https://target.com/api/users\n  -d '{\"id\": \"1 OR 1=1\"}'") }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Impact & Remediation -->
+      <div class="card-dark mb-4">
+        <div class="card-dark-header">
+          <i class="bi bi-shield-fill-exclamation me-2 text-accent"></i>Impacto e Remediação
+        </div>
+        <div class="card-dark-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">{{ form.impact.label.text }}</label>
+              {{ form.impact(class="form-control", rows="3",
+                             placeholder="Descreva o impacto desta vulnerabilidade...") }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.recommendation.label.text }}</label>
+              {{ form.recommendation(class="form-control", rows="3",
+                                     placeholder="Como remediar esta vulnerabilidade...") }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.references.label.text }}</label>
+              {{ form.references(class="form-control", rows="3",
+                                 placeholder="https://owasp.org/...\nhttps://cve.mitre.org/...") }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3 justify-content-end">
+        {% if report %}
+          <a href="{{ url_for('reports.view', report_id=report.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar ao Relatório
+          </a>
+        {% elif vuln %}
+          <a href="{{ url_for('reports.view', report_id=vuln.report_id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar ao Relatório
+          </a>
+        {% else %}
+          <a href="{{ url_for('vulns.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-lg me-1"></i>Cancelar
+          </a>
+        {% endif %}
+        <button type="submit" class="btn btn-accent">
+          <i class="bi bi-check-lg me-1"></i>{{ form.submit.label.text }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update severity select color
+const sevSelect = document.getElementById('severitySelect');
+const sevColors = {
+  'Critical': '#f85149', 'High': '#db6d28',
+  'Medium': '#d29922', 'Low': '#58a6ff', 'Informational': '#8b949e'
+};
+function updateSevColor() {
+  const color = sevColors[sevSelect.value] || '#8b949e';
+  sevSelect.style.color = color;
+  sevSelect.style.borderColor = color + '66';
+}
+if (sevSelect) {
+  sevSelect.addEventListener('change', updateSevColor);
+  updateSevColor();
+}
+</script>
+{% endblock %}

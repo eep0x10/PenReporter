@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Vulnerabilidades{% endblock %}
+{% block page_title %}Vulnerabilidades{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('vulns.index') }}"
+       class="btn btn-sm {{ 'btn-accent' if not severity_filter else 'btn-outline-secondary' }}">Todas</a>
+    {% for sev in ['Critical','High','Medium','Low','Informational'] %}
+      <a href="{{ url_for('vulns.index') }}?severity={{ sev }}{{ '&status=' + status_filter if status_filter else '' }}"
+         class="btn btn-sm badge-sev-btn badge-{{ sev|lower }} {{ 'active-filter' if severity_filter == sev else '' }}">
+        {{ sev }}
+      </a>
+    {% endfor %}
+  </div>
+  <a href="{{ url_for('vulns.create') }}" class="btn btn-accent">
+    <i class="bi bi-plus-lg me-1"></i>Nova Vulnerabilidade
+  </a>
+</div>
+
+<div class="mb-3 d-flex gap-2">
+  <span class="text-muted small">Status:</span>
+  {% for s in ['Open','Remediated','Accepted Risk','False Positive'] %}
+    <a href="{{ url_for('vulns.index') }}?status={{ s }}{{ '&severity=' + severity_filter if severity_filter else '' }}"
+       class="btn btn-xs {{ 'btn-accent' if status_filter == s else 'btn-outline-secondary' }}">{{ s }}</a>
+  {% endfor %}
+  {% if status_filter %}
+    <a href="{{ url_for('vulns.index') }}{{ '?severity=' + severity_filter if severity_filter else '' }}" class="btn btn-xs btn-outline-secondary">
+      <i class="bi bi-x"></i> Limpar
+    </a>
+  {% endif %}
+</div>
+
+{% if vulns %}
+<div class="card-dark">
+  <div class="card-dark-body p-0">
+    <div class="table-responsive">
+      <table class="table table-dark-custom mb-0">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Severidade</th>
+            <th>CVSS</th>
+            <th>Relatório</th>
+            <th>Componente</th>
+            <th>Status</th>
+            <th>Data</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in vulns %}
+          <tr>
+            <td>
+              <a href="{{ url_for('reports.view', report_id=v.report_id) }}" class="text-white hover-accent fw-medium">
+                {{ v.title|truncate(50) }}
+              </a>
+              {% if v.cve_id %}
+                <span class="cve-badge ms-1">{{ v.cve_id }}</span>
+              {% endif %}
+            </td>
+            <td><span class="badge-sev badge-{{ v.severity|lower }}">{{ v.severity }}</span></td>
+            <td>
+              {% if v.cvss_score %}
+                <span class="cvss-score cvss-{{ 'critical' if v.cvss_score >= 9 else 'high' if v.cvss_score >= 7 else 'medium' if v.cvss_score >= 4 else 'low' }}">
+                  {{ '%.1f'|format(v.cvss_score) }}
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">
+              <a href="{{ url_for('reports.view', report_id=v.report_id) }}" class="text-muted hover-accent">
+                {{ v.report.title|truncate(30) }}
+              </a>
+            </td>
+            <td class="text-muted small">{{ v.affected_component or '—' }}</td>
+            <td><span class="badge-status badge-{{ v.status|lower|replace(' ','-') }}">{{ v.status }}</span></td>
+            <td class="text-muted small">{{ v.created_at.strftime('%d/%m/%Y') }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{{ url_for('vulns.edit', vuln_id=v.id) }}" class="btn btn-xs btn-outline-secondary" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="POST" action="{{ url_for('vulns.delete', vuln_id=v.id) }}" class="d-inline"
+                      onsubmit="return confirm('Excluir esta vulnerabilidade?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-xs btn-outline-danger" title="Excluir">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="mt-2 text-muted small">{{ vulns|length }} vulnerabilidade(s) encontrada(s)</div>
+{% else %}
+<div class="empty-state-page">
+  <div class="empty-icon"><i class="bi bi-bug"></i></div>
+  <h4>Nenhuma vulnerabilidade encontrada</h4>
+  <p class="text-muted">Adicione vulnerabilidades a um relatório.</p>
+  <a href="{{ url_for('vulns.create') }}" class="btn btn-accent mt-2">
+    <i class="bi bi-plus-lg me-1"></i>Nova Vulnerabilidade
+  </a>
+</div>
+{% endif %}
+{% endblock %}

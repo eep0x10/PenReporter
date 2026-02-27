@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Criar Conta{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card" style="max-width:480px">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><i class="bi bi-shield-fill-check"></i></div>
+      <h1 class="auth-logo-text">PentReport</h1>
+      <p class="auth-logo-sub">Criar nova conta</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        <label class="form-label text-muted small">Nome Completo</label>
+        {{ form.full_name(class="form-control", placeholder="João Silva") }}
+        {% if form.full_name.errors %}
+          <div class="form-text text-danger">{{ form.full_name.errors[0] }}</div>
+        {% endif %}
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col">
+          <label class="form-label text-muted small">Usuário</label>
+          {{ form.username(class="form-control", placeholder="joao_silva") }}
+          {% if form.username.errors %}
+            <div class="form-text text-danger">{{ form.username.errors[0] }}</div>
+          {% endif %}
+        </div>
+        <div class="col">
+          <label class="form-label text-muted small">Email</label>
+          {{ form.email(class="form-control", placeholder="email@empresa.com") }}
+          {% if form.email.errors %}
+            <div class="form-text text-danger">{{ form.email.errors[0] }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col">
+          <label class="form-label text-muted small">Senha</label>
+          {{ form.password(class="form-control", placeholder="••••••••") }}
+          {% if form.password.errors %}
+            <div class="form-text text-danger">{{ form.password.errors[0] }}</div>
+          {% endif %}
+        </div>
+        <div class="col">
+          <label class="form-label text-muted small">Confirmar Senha</label>
+          {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
+          {% if form.confirm_password.errors %}
+            <div class="form-text text-danger">{{ form.confirm_password.errors[0] }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-accent w-100 btn-lg">
+        <i class="bi bi-person-plus-fill me-2"></i>Criar Conta
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p class="text-muted small mb-0">
+        Já tem conta?
+        <a href="{{ url_for('auth.login') }}" class="text-accent">Fazer login</a>
+      </p>
+    </div>
+  </div>
+  <div class="auth-bg-grid"></div>
+</div>
+{% endblock %}

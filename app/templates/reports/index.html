@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Relatórios{% endblock %}
+{% block page_title %}Relatórios{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('reports.index') }}" class="btn btn-sm {{ 'btn-accent' if not status_filter else 'btn-outline-secondary' }}">Todos</a>
+    {% for s, label in [('Draft','Rascunho'),('In Review','Em Revisão'),('Final','Final')] %}
+      <a href="{{ url_for('reports.index') }}?status={{ s }}"
+         class="btn btn-sm {{ 'btn-accent' if status_filter == s else 'btn-outline-secondary' }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <a href="{{ url_for('reports.create') }}" class="btn btn-accent">
+    <i class="bi bi-plus-lg me-1"></i>Novo Relatório
+  </a>
+</div>
+
+{% if reports %}
+<div class="row g-3">
+  {% for report in reports %}
+  <div class="col-12 col-lg-6">
+    <div class="card-dark report-card">
+      <div class="report-card-header">
+        <div class="flex-grow-1 min-w-0">
+          <h6 class="report-title">
+            <a href="{{ url_for('reports.view', report_id=report.id) }}" class="text-white hover-accent">
+              {{ report.title }}
+            </a>
+          </h6>
+          <div class="report-meta">
+            <span><i class="bi bi-buildings me-1"></i>{{ report.client.name }}</span>
+            <span><i class="bi bi-person me-1"></i>{{ report.author.full_name }}</span>
+            {% if report.start_date %}
+            <span><i class="bi bi-calendar me-1"></i>{{ report.start_date.strftime('%d/%m/%Y') }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="report-badges">
+          <span class="badge-status badge-{{ report.status|lower|replace(' ','-') }}">{{ report.status }}</span>
+          {% if report.overall_risk %}
+            <span class="badge-sev badge-{{ report.overall_risk|lower }}">{{ report.overall_risk }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="report-card-body">
+        <div class="vuln-summary">
+          {% set counts = report.get_vuln_counts() %}
+          {% for sev, color in [('Critical','critical'),('High','high'),('Medium','medium'),('Low','low'),('Informational','info')] %}
+            {% if counts[sev] > 0 %}
+              <div class="vuln-pill vuln-{{ color }}">
+                <span class="vuln-count">{{ counts[sev] }}</span>
+                <span class="vuln-label">{{ sev[:4] }}.</span>
+              </div>
+            {% endif %}
+          {% endfor %}
+          {% if counts.values()|sum == 0 %}
+            <span class="text-muted small">Sem vulnerabilidades</span>
+          {% endif %}
+        </div>
+        <div class="report-type-badge">
+          <i class="bi bi-tag me-1"></i>{{ report.report_type }}
+        </div>
+      </div>
+      <div class="report-card-footer">
+        <span class="text-muted small">
+          Atualizado {{ report.updated_at.strftime('%d/%m/%Y %H:%M') }}
+        </span>
+        <div class="report-actions">
+          <a href="{{ url_for('reports.view', report_id=report.id) }}" class="btn btn-xs btn-outline-accent" title="Ver">
+            <i class="bi bi-eye"></i>
+          </a>
+          <a href="{{ url_for('reports.edit', report_id=report.id) }}" class="btn btn-xs btn-outline-secondary" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <a href="{{ url_for('reports.generate_pdf', report_id=report.id) }}" class="btn btn-xs btn-outline-secondary" title="PDF">
+            <i class="bi bi-file-pdf"></i>
+          </a>
+          <form method="POST" action="{{ url_for('reports.delete', report_id=report.id) }}" class="d-inline"
+                onsubmit="return confirm('Tem certeza que deseja excluir este relatório?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-xs btn-outline-danger" title="Excluir">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-page">
+  <div class="empty-icon"><i class="bi bi-file-earmark-text"></i></div>
+  <h4>Nenhum relatório encontrado</h4>
+  <p class="text-muted">Crie seu primeiro relatório de pentest.</p>
+  <a href="{{ url_for('reports.create') }}" class="btn btn-accent mt-2">
+    <i class="bi bi-plus-lg me-1"></i>Novo Relatório
+  </a>
+</div>
+{% endif %}
+{% endblock %}
