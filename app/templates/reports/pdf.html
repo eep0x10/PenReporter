@@ -593,19 +593,19 @@ li { margin-bottom: 3pt; }
     {% for ev in vuln.evidences %}
     <tr>
       <td class="vb" colspan="5" style="padding:10pt 9pt">
-        <div style="font-weight:bold;font-size:9.5pt;margin-bottom:6pt">
-          Imagem {{ loop.index }}{% if ev.description %} — {{ ev.description }}{% endif %}
-        </div>
         {%- set b64 = ev.filename | file_to_b64 -%}
-        {%- if b64 %}
-        <div style="text-align:center;margin-bottom:8pt">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2pt;white-space:normal">
+          {%- if b64 %}
           <img src="{{ b64 }}"
-               style="max-width:100%;max-height:420pt;display:block;margin:0 auto;border:1pt solid #BFBFBF">
+               style="max-width:100%;max-height:420pt;border:1pt solid #BFBFBF">
+          {%- endif %}
+          <div style="font-weight:bold;font-size:9.5pt;text-align:center">
+            Imagem {{ loop.index }}{% if ev.description %} — {{ ev.description }}{% endif %}
+          </div>
+          {%- if ev.body_text %}
+          <div style="font-size:9.5pt;color:#444444;white-space:pre-wrap;align-self:flex-start;margin-top:4pt">{{ ev.body_text }}</div>
+          {%- endif %}
         </div>
-        {%- endif %}
-        {%- if ev.body_text %}
-        <div style="font-size:9.5pt;color:#444444;white-space:pre-wrap;margin-top:6pt">{{ ev.body_text }}</div>
-        {%- endif %}
       </td>
     </tr>
     {% endfor %}

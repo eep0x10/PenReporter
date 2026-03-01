@@ -216,17 +216,17 @@
               <i class="bi bi-images me-1"></i>Evidências ({{ vuln.evidences|length }})
             </div>
             {% for ev in vuln.evidences %}
-            <div class="mb-4">
-              <div class="text-muted small mb-2 fw-bold">
-                Imagem {{ loop.index }}{%- if ev.description %} — {{ ev.description }}{% endif %}
-              </div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.5rem">
               <img src="{{ url_for('static', filename='ev/' + ev.filename) }}"
-                   class="img-fluid rounded border evidence-img"
-                   style="max-height:500px;max-width:100%;cursor:zoom-in;display:block"
+                   class="rounded border"
+                   style="max-height:500px;max-width:100%;cursor:zoom-in;flex-shrink:0"
                    onclick="window.open(this.src)"
                    alt="Imagem {{ loop.index }}">
+              <div class="text-muted small fw-bold" style="margin-top:8px">
+                Imagem {{ loop.index }}{%- if ev.description %} — {{ ev.description }}{% endif %}
+              </div>
               {% if ev.body_text %}
-              <p class="text-muted small mt-2 mb-0" style="white-space:pre-wrap">{{ ev.body_text }}</p>
+              <p class="text-muted small mb-0" style="margin-top:6px;white-space:pre-wrap;text-align:left;align-self:flex-start">{{ ev.body_text }}</p>
               {% endif %}
             </div>
             {% endfor %}

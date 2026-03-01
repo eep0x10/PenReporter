@@ -54,7 +54,6 @@ def create():
             scope=form.scope.data,
             conclusion=form.conclusion.data,
         )
-        report.overall_risk = report.get_overall_risk()
         db.session.add(report)
         db.session.commit()
         flash('Relatório criado com sucesso!', 'success')
