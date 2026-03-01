@@ -1,14 +1,14 @@
 import os
 from app import create_app, db
-from app.models import User, Client, Report, Vulnerability
+from app.models import User, Product, Report, Vulnerability, CWE
 
 app = create_app(os.environ.get('FLASK_ENV', 'default'))
 
 
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, User=User, Client=Client, Report=Report,
-                Vulnerability=Vulnerability)
+    return dict(db=db, User=User, Product=Product, Report=Report,
+                Vulnerability=Vulnerability, CWE=CWE)
 
 
 @app.cli.command('init-db')

@@ -4,31 +4,50 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-12 col-lg-7">
+  <div class="col-12 col-lg-9">
     <div class="card-dark">
       <div class="card-dark-header">
-        <i class="bi bi-buildings-fill me-2 text-accent"></i>Dados do Cliente
+        <i class="bi bi-box-fill me-2 text-accent"></i>Dados do Produto / Alvo
       </div>
       <div class="card-dark-body">
         <form method="POST" novalidate>
           {{ form.hidden_tag() }}
           <div class="row g-3">
+
             <div class="col-12">
               <label class="form-label">{{ form.name.label.text }} <span class="text-danger">*</span></label>
               {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""),
-                           placeholder="Nome da Empresa") }}
+                           placeholder="Ex: App Bradesco Saúde, site next.com, Rede Interna Cayman") }}
               {% if form.name.errors %}
                 <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
               {% endif %}
             </div>
+
             <div class="col-md-6">
-              <label class="form-label">{{ form.industry.label.text }}</label>
-              {{ form.industry(class="form-control", placeholder="Ex: Financeiro, Saúde, Varejo") }}
+              <label class="form-label">{{ form.product_type.label.text }}</label>
+              {{ form.product_type(class="form-select") }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ form.platform.label.text }}</label>
+              {{ form.platform(class="form-select") }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">{{ form.target_url.label.text }}</label>
+              {{ form.target_url(class="form-control font-mono",
+                                 placeholder="https://app.empresa.com  ou  192.168.1.0/24  ou  *.intranet.corp") }}
+              <div class="form-text text-muted">URL, hostname, IP, range de rede ou descrição de escopo</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ form.owner.label.text }}</label>
+              {{ form.owner(class="form-control", placeholder="Bradesco, Next Informática, Cayman Bank...") }}
             </div>
             <div class="col-md-6">
               <label class="form-label">{{ form.contact_name.label.text }}</label>
-              {{ form.contact_name(class="form-control", placeholder="João Silva") }}
+              {{ form.contact_name(class="form-control", placeholder="Nome do responsável") }}
             </div>
+
             <div class="col-md-6">
               <label class="form-label">{{ form.contact_email.label.text }}</label>
               {{ form.contact_email(class="form-control", placeholder="contato@empresa.com") }}
@@ -40,15 +59,16 @@
               <label class="form-label">{{ form.contact_phone.label.text }}</label>
               {{ form.contact_phone(class="form-control", placeholder="+55 11 99999-9999") }}
             </div>
+
             <div class="col-12">
               <label class="form-label">{{ form.description.label.text }}</label>
               {{ form.description(class="form-control", rows="3",
-                                  placeholder="Informações adicionais sobre o cliente...") }}
+                                  placeholder="Notas adicionais sobre o produto, ambiente, restrições...") }}
             </div>
           </div>
 
           <div class="d-flex gap-3 justify-content-end mt-4">
-            <a href="{{ url_for('clients.index') }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('products.index') }}" class="btn btn-outline-secondary">
               <i class="bi bi-x-lg me-1"></i>Cancelar
             </a>
             <button type="submit" class="btn btn-accent">

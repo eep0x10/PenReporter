@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app import create_app, db
-from app.models import User, Client, Report, Vulnerability, SEVERITY_ORDER
+from app.models import User, Product, Report, Vulnerability, CWE, SEVERITY_ORDER
 
 app = create_app()
 
@@ -35,12 +35,24 @@ USERS = [
     dict(username='rafael',   email='rafael@pentreport.local',   full_name='Rafael Moura',         role='pentester',  password='pentest123'),
 ]
 
-CLIENTS = [
-    dict(name='Banco NovoBrasil S.A.',   industry='Financeiro',   contact_name='Marcos Teixeira',  contact_email='marcos@novobrasil.com.br', contact_phone='+55 11 3000-0001', description='Banco de médio porte com foco em digital banking.'),
-    dict(name='HealthPlus Sistemas',     industry='Saúde',        contact_name='Dra. Luciana Melo', contact_email='ti@healthplus.com.br',   contact_phone='+55 21 3000-0002', description='Plataforma SaaS para gestão hospitalar.'),
-    dict(name='LogiTech Transportes',    industry='Logística',    contact_name='Fernando Costa',   contact_email='fernando@logitech.com.br', contact_phone='+55 31 3000-0003', description='Operadora logística com +300 filiais no Brasil.'),
-    dict(name='GovDigital — Secretaria de Finanças', industry='Governo', contact_name='Sra. Patrícia Rocha', contact_email='ti@govdigital.gov.br', contact_phone='+55 61 3000-0004', description='Órgão público estadual — sistemas de arrecadação.'),
-    dict(name='ShopMax E-commerce',      industry='Varejo',       contact_name='Ricardo Alves',    contact_email='sec@shopmax.com.br',     contact_phone='+55 11 3000-0005', description='E-commerce B2C com ~2 milhões de usuários.'),
+PRODUCTS = [
+    dict(name='Portal de Internet Banking NovoBrasil', product_type='Web Application', platform='Web',             target_url='https://internetbanking.novobrasil.com.br', owner='Banco NovoBrasil S.A.',      contact_name='Marcos Teixeira',   contact_email='marcos@novobrasil.com.br', contact_phone='+55 11 3000-0001', description='Portal web de banking para correntistas.'),
+    dict(name='Sistema de Prontuário Eletrônico',      product_type='Web Application', platform='Web',             target_url='https://pep.healthplus.com.br',             owner='HealthPlus Sistemas',        contact_name='Dra. Luciana Melo', contact_email='ti@healthplus.com.br',   contact_phone='+55 21 3000-0002', description='Plataforma SaaS para gestão hospitalar.'),
+    dict(name='Rede Interna LogiTech',                 product_type='Network/Infrastructure', platform='Internal Network', target_url='10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24', owner='LogiTech Transportes', contact_name='Fernando Costa',    contact_email='fernando@logitech.com.br', contact_phone='+55 31 3000-0003', description='Operadora logística com +300 filiais.'),
+    dict(name='Sistemas GovDigital — Secretaria Finanças', product_type='Cloud',       platform='AWS',             target_url='https://gov.govdigital.gov.br',             owner='GovDigital',                 contact_name='Sra. Patrícia Rocha', contact_email='ti@govdigital.gov.br', contact_phone='+55 61 3000-0004', description='Órgão público estadual — sistemas de arrecadação.'),
+    dict(name='API REST ShopMax E-commerce',           product_type='API',             platform='Web',             target_url='https://api.shopmax.com.br/v2',             owner='ShopMax',                    contact_name='Ricardo Alves',     contact_email='sec@shopmax.com.br',     contact_phone='+55 11 3000-0005', description='API REST de e-commerce B2C com ~2 milhões de usuários.'),
+]
+
+CWES_SEED = [
+    dict(cwe_id='CWE-89',  name='SQL Injection',                                        description='Improper Neutralization of Special Elements used in an SQL Command'),
+    dict(cwe_id='CWE-79',  name='Cross-site Scripting (XSS)',                           description='Improper Neutralization of Input During Web Page Generation'),
+    dict(cwe_id='CWE-22',  name='Path Traversal',                                       description='Improper Limitation of a Pathname to a Restricted Directory'),
+    dict(cwe_id='CWE-918', name='Server-Side Request Forgery (SSRF)',                   description='Server-Side Request Forgery'),
+    dict(cwe_id='CWE-287', name='Improper Authentication',                              description='Improper Authentication'),
+    dict(cwe_id='CWE-200', name='Exposure of Sensitive Information',                    description='Exposure of Sensitive Information to an Unauthorized Actor'),
+    dict(cwe_id='CWE-611', name='XML External Entity (XXE) Injection',                  description='Improper Restriction of XML External Entity Reference'),
+    dict(cwe_id='CWE-639', name='Authorization Bypass Through User-Controlled Key (IDOR)', description='Authorization Bypass Through User-Controlled Key'),
+    dict(cwe_id='CWE-798', name='Use of Hard-coded Credentials',                        description='Use of Hard-coded Credentials'),
 ]
 
 # ─── Vulnerabilities templates ──────────────────────────────────────────────
@@ -48,6 +60,7 @@ VULNS = {
   # ── Web Application ────────────────────────────────────────────────────
   'sqli': dict(
     title='SQL Injection no endpoint de autenticação',
+    cwe_key='CWE-89',
     severity='Critical', cvss_score=9.8,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
     cve_id='CVE-2024-12345',
@@ -90,6 +103,7 @@ VULNS = {
 
   'xss_stored': dict(
     title='Cross-Site Scripting (XSS) Armazenado no módulo de comentários',
+    cwe_key='CWE-79',
     severity='High', cvss_score=8.2,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:L/A:N',
     cve_id=None,
@@ -132,6 +146,7 @@ VULNS = {
 
   'idor': dict(
     title='Insecure Direct Object Reference (IDOR) na API de documentos',
+    cwe_key='CWE-639',
     severity='High', cvss_score=7.5,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N',
     cve_id=None,
@@ -171,6 +186,7 @@ VULNS = {
 
   'jwt_weak': dict(
     title='JWT com algoritmo "none" aceito pelo servidor',
+    cwe_key='CWE-287',
     severity='Critical', cvss_score=9.1,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N',
     cve_id='CVE-2022-21449',
@@ -212,6 +228,7 @@ VULNS = {
 
   'ssrf': dict(
     title='Server-Side Request Forgery (SSRF) no importador de URL',
+    cwe_key='CWE-918',
     severity='High', cvss_score=8.6,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N',
     cve_id=None,
@@ -252,6 +269,7 @@ VULNS = {
 
   'exposed_admin': dict(
     title='Painel administrativo exposto sem autenticação adicional',
+    cwe_key='CWE-287',
     severity='Critical', cvss_score=9.3,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
     cve_id=None,
@@ -289,6 +307,7 @@ VULNS = {
 
   'tls_weak': dict(
     title='Suporte a protocolos TLS obsoletos (TLS 1.0 e 1.1)',
+    cwe_key='CWE-200',
     severity='Medium', cvss_score=5.9,
     cvss_vector='CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N',
     cve_id='CVE-2014-3566',
@@ -327,6 +346,7 @@ VULNS = {
 
   'info_disclosure': dict(
     title='Disclosure de informações sensíveis nos headers HTTP',
+    cwe_key='CWE-200',
     severity='Low', cvss_score=3.7,
     cvss_vector='CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N',
     cve_id=None,
@@ -356,6 +376,7 @@ VULNS = {
 
   'broken_auth': dict(
     title='Ausência de rate limiting no endpoint de autenticação',
+    cwe_key='CWE-287',
     severity='Medium', cvss_score=6.5,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N',
     cve_id=None,
@@ -391,6 +412,7 @@ VULNS = {
   # ── Network ─────────────────────────────────────────────────────────────
   'open_ports': dict(
     title='Serviços críticos expostos diretamente à internet',
+    cwe_key='CWE-200',
     severity='High', cvss_score=7.3,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L',
     cve_id=None,
@@ -430,6 +452,7 @@ VULNS = {
 
   'default_creds': dict(
     title='Credenciais padrão em equipamento de rede (Cisco)',
+    cwe_key='CWE-798',
     severity='Critical', cvss_score=9.8,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
     cve_id=None,
@@ -502,6 +525,7 @@ VULNS = {
   # ── Misc ─────────────────────────────────────────────────────────────────
   'log4shell': dict(
     title='Apache Log4j — Log4Shell (RCE Crítico)',
+    cwe_key='CWE-918',
     severity='Critical', cvss_score=10.0,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H',
     cve_id='CVE-2021-44228',
@@ -546,6 +570,7 @@ VULNS = {
 
   'path_traversal': dict(
     title='Path Traversal no download de arquivos',
+    cwe_key='CWE-22',
     severity='High', cvss_score=7.8,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N',
     cve_id=None,
@@ -585,6 +610,7 @@ VULNS = {
 
   'missing_headers': dict(
     title='Ausência de cabeçalhos de segurança HTTP',
+    cwe_key='CWE-200',
     severity='Low', cvss_score=4.3,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N',
     cve_id=None,
@@ -620,6 +646,7 @@ VULNS = {
 
   'xxe': dict(
     title='XML External Entity (XXE) Injection na importação de XML',
+    cwe_key='CWE-611',
     severity='High', cvss_score=7.5,
     cvss_vector='CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N',
     cve_id=None,
@@ -662,7 +689,7 @@ VULNS = {
 REPORTS = [
   dict(
     title='Pentest Web Application — Portal de Internet Banking',
-    client_idx=0, author_idx=1,
+    product_idx=0, author_idx=1,
     report_type='Web Application',
     status='Final',
     start_date=d(2025,10,7), end_date=d(2025,10,18),
@@ -715,7 +742,7 @@ REPORTS = [
 
   dict(
     title='Pentest de Infraestrutura e Rede Interna',
-    client_idx=2, author_idx=2,
+    product_idx=2, author_idx=2,
     report_type='Network',
     status='Final',
     start_date=d(2025,11,3), end_date=d(2025,11,14),
@@ -763,7 +790,7 @@ REPORTS = [
 
   dict(
     title='Red Team Assessment — Simulação de APT',
-    client_idx=3, author_idx=1,
+    product_idx=3, author_idx=1,
     report_type='Red Team',
     status='In Review',
     start_date=d(2025,12,1), end_date=d(2025,12,19),
@@ -809,7 +836,7 @@ REPORTS = [
 
   dict(
     title='Avaliação de Segurança — API REST E-commerce',
-    client_idx=4, author_idx=3,
+    product_idx=4, author_idx=3,
     report_type='API',
     status='Draft',
     start_date=d(2026,1,13), end_date=d(2026,1,24),
@@ -829,7 +856,7 @@ REPORTS = [
 
   dict(
     title='Pentest Web Application — Sistema de Prontuário Eletrônico',
-    client_idx=1, author_idx=2,
+    product_idx=1, author_idx=2,
     report_type='Web Application',
     status='Final',
     start_date=d(2025,9,8), end_date=d(2025,9,19),
@@ -882,18 +909,33 @@ def seed():
             print(f'      + {u["username"]} ({u["role"]})')
         db.session.flush()
 
-        # ── Clients ────────────────────────────────────────────────────────
-        print('\n  🏢  Criando clientes...')
-        client_objs = []
-        for c in CLIENTS:
-            existing = Client.query.filter_by(name=c['name']).first()
+        # ── CWEs ───────────────────────────────────────────────────────────
+        print('\n  🏷️  Criando CWEs...')
+        cwe_objs = {}
+        for cw in CWES_SEED:
+            existing = CWE.query.filter_by(cwe_id=cw['cwe_id']).first()
             if existing:
-                client_objs.append(existing)
+                cwe_objs[cw['cwe_id']] = existing
+                print(f'      → {cw["cwe_id"]} já existe, pulando')
+                continue
+            obj = CWE(**cw)
+            db.session.add(obj)
+            cwe_objs[cw['cwe_id']] = obj
+            print(f'      + {cw["cwe_id"]} — {cw["name"]}')
+        db.session.flush()
+
+        # ── Products ───────────────────────────────────────────────────────
+        print('\n  📦  Criando produtos...')
+        product_objs = []
+        for c in PRODUCTS:
+            existing = Product.query.filter_by(name=c['name']).first()
+            if existing:
+                product_objs.append(existing)
                 print(f'      → {c["name"]} já existe, pulando')
                 continue
-            obj = Client(**c, created_at=ago(random.randint(60, 180)))
+            obj = Product(**c, created_at=ago(random.randint(60, 180)))
             db.session.add(obj)
-            client_objs.append(obj)
+            product_objs.append(obj)
             print(f'      + {c["name"]}')
         db.session.flush()
 
@@ -907,7 +949,7 @@ def seed():
 
             report = Report(
                 title=rd['title'],
-                client_id=client_objs[rd['client_idx']].id,
+                product_id=product_objs[rd['product_idx']].id,
                 author_id=user_objs[rd['author_idx']].id,
                 report_type=rd['report_type'],
                 status=rd['status'],
@@ -929,10 +971,14 @@ def seed():
             for i, (vkey, vstatus) in enumerate(zip(rd['vulns'], rd['vuln_statuses'])):
                 vd = dict(VULNS[vkey])
                 sev = vd.pop('severity')
+                cwe_key = vd.pop('cwe_key', None)
                 status_override = vstatus
+
+                cwe_obj = cwe_objs.get(cwe_key) if cwe_key else None
 
                 vuln = Vulnerability(
                     report_id=report.id,
+                    cwe_id=cwe_obj.id if cwe_obj else None,
                     title=vd['title'],
                     description=vd['description'],
                     cvss_score=vd.get('cvss_score'),
@@ -962,7 +1008,8 @@ def seed():
         print('\n' + '─'*60)
         print(f'  ✅  Seed concluído!\n')
         print(f'  👤  Usuários:         {User.query.count()}')
-        print(f'  🏢  Clientes:         {Client.query.count()}')
+        print(f'  📦  Produtos:         {Product.query.count()}')
+        print(f'  🏷️  CWEs:             {CWE.query.count()}')
         print(f'  📄  Relatórios:       {Report.query.count()}')
         print(f'  🐛  Vulnerabilidades: {Vulnerability.query.count()}')
         print()

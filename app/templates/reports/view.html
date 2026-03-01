@@ -35,8 +35,10 @@
         <div class="row g-2">
           <div class="col-sm-6">
             <div class="detail-item">
-              <span class="detail-label">Cliente</span>
-              <span class="detail-value">{{ report.client.name }}</span>
+              <span class="detail-label">Produto / Alvo</span>
+              <span class="detail-value">
+                <a href="{{ url_for('products.index') }}" class="text-accent">{{ report.product.name }}</a>
+              </span>
             </div>
           </div>
           <div class="col-sm-6">
@@ -49,6 +51,25 @@
             <div class="detail-item">
               <span class="detail-label">Pentester</span>
               <span class="detail-value">{{ report.author.full_name }}</span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="detail-item">
+              <span class="detail-label">Revisor</span>
+              <span class="detail-value">
+                {% if report.reviewer %}
+                  {{ report.reviewer.full_name }}
+                  {% if report.status == 'In Review' %}
+                    <span class="badge-status badge-in-review ms-1" style="font-size:10px">Em Revisão</span>
+                  {% endif %}
+                {% elif report.status == 'In Review' %}
+                  <span class="text-muted">—
+                    <a href="{{ url_for('reports.edit', report_id=report.id) }}" class="text-accent ms-1">Atribuir</a>
+                  </span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </span>
             </div>
           </div>
           <div class="col-sm-6">
@@ -151,6 +172,9 @@
         <div class="vuln-item-left">
           <span class="badge-sev badge-{{ vuln.severity|lower }}">{{ vuln.severity }}</span>
           <h6 class="vuln-item-title">{{ vuln.title }}</h6>
+          {% if vuln.cwe %}
+            <span class="cve-badge" title="{{ vuln.cwe.name }}">{{ vuln.cwe.cwe_id }}</span>
+          {% endif %}
           {% if vuln.cve_id %}
             <span class="cve-badge">{{ vuln.cve_id }}</span>
           {% endif %}
@@ -186,10 +210,26 @@
             <p class="text-muted small mb-0" style="white-space:pre-wrap">{{ vuln.description }}</p>
           </div>
         {% endif %}
-        {% if vuln.proof_of_concept %}
+        {% if vuln.evidences %}
           <div class="vuln-section">
-            <div class="vuln-section-title">Prova de Conceito</div>
-            <pre class="code-block">{{ vuln.proof_of_concept }}</pre>
+            <div class="vuln-section-title">
+              <i class="bi bi-images me-1"></i>Evidências ({{ vuln.evidences|length }})
+            </div>
+            {% for ev in vuln.evidences %}
+            <div class="mb-4">
+              <div class="text-muted small mb-2 fw-bold">
+                Imagem {{ loop.index }}{%- if ev.description %} — {{ ev.description }}{% endif %}
+              </div>
+              <img src="{{ url_for('static', filename='ev/' + ev.filename) }}"
+                   class="img-fluid rounded border evidence-img"
+                   style="max-height:500px;max-width:100%;cursor:zoom-in;display:block"
+                   onclick="window.open(this.src)"
+                   alt="Imagem {{ loop.index }}">
+              {% if ev.body_text %}
+              <p class="text-muted small mt-2 mb-0" style="white-space:pre-wrap">{{ ev.body_text }}</p>
+              {% endif %}
+            </div>
+            {% endfor %}
           </div>
         {% endif %}
         {% if vuln.impact %}

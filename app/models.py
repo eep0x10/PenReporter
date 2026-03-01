@@ -24,6 +24,8 @@ class User(UserMixin, db.Model):
 
     reports = db.relationship('Report', backref='author', lazy='dynamic',
                               foreign_keys='Report.author_id')
+    reviews = db.relationship('Report', backref='reviewer', lazy='dynamic',
+                              foreign_keys='Report.reviewer_id')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -41,22 +43,44 @@ class User(UserMixin, db.Model):
         return f'<User {self.username}>'
 
 
-class Client(db.Model):
-    __tablename__ = 'clients'
+class CWE(db.Model):
+    __tablename__ = 'cwes'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    industry = db.Column(db.String(80))
+    cwe_id = db.Column(db.String(20), unique=True, nullable=False)  # e.g., CWE-79
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    vulnerabilities = db.relationship('Vulnerability', backref='cwe', lazy='dynamic')
+
+    @property
+    def display_name(self):
+        return f'{self.cwe_id} — {self.name}'
+
+    def __repr__(self):
+        return f'<CWE {self.cwe_id}>'
+
+
+class Product(db.Model):
+    __tablename__ = 'products'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)          # product name (e.g., "App Bradesco Saúde")
+    product_type = db.Column(db.String(50))                   # Web Application, Mobile App, API, etc.
+    platform = db.Column(db.String(50))                       # iOS, Android, Web, Linux, etc.
+    target_url = db.Column(db.String(300))                    # URL, hostname, IP or scope description
+    owner = db.Column(db.String(120))                         # company/org that owns the product
     contact_name = db.Column(db.String(120))
     contact_email = db.Column(db.String(120))
     contact_phone = db.Column(db.String(30))
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    reports = db.relationship('Report', backref='client', lazy='dynamic')
+    reports = db.relationship('Report', backref='product', lazy='dynamic')
 
     def __repr__(self):
-        return f'<Client {self.name}>'
+        return f'<Product {self.name}>'
 
 
 SEVERITY_ORDER = {'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3, 'Informational': 4}
@@ -75,8 +99,9 @@ class Report(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    reviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     status = db.Column(db.String(20), default='Draft')  # Draft, In Review, Final
     report_type = db.Column(db.String(50), default='Web Application')
     start_date = db.Column(db.Date)
@@ -115,6 +140,7 @@ class Vulnerability(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     report_id = db.Column(db.Integer, db.ForeignKey('reports.id'), nullable=False)
+    cwe_id = db.Column(db.Integer, db.ForeignKey('cwes.id'), nullable=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     severity = db.Column(db.String(20), default='Medium')  # Critical, High, Medium, Low, Informational
@@ -132,6 +158,10 @@ class Vulnerability(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    evidences = db.relationship('Evidence', backref='vulnerability',
+                                cascade='all, delete-orphan',
+                                order_by='Evidence.order_index')
+
     def set_severity(self, severity):
         self.severity = severity
         self.severity_order = SEVERITY_ORDER.get(severity, 4)
@@ -142,3 +172,18 @@ class Vulnerability(db.Model):
 
     def __repr__(self):
         return f'<Vulnerability {self.title}>'
+
+
+class Evidence(db.Model):
+    __tablename__ = 'evidences'
+
+    id = db.Column(db.Integer, primary_key=True)
+    vulnerability_id = db.Column(db.Integer, db.ForeignKey('vulnerabilities.id'), nullable=False)
+    filename = db.Column(db.String(300), nullable=False)   # stored under static/ev/
+    description = db.Column(db.String(500), nullable=False, default='')  # caption: "Imagem N — description"
+    body_text = db.Column(db.Text)                         # optional text shown after the image
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Evidence {self.filename}>'

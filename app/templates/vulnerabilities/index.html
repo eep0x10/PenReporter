@@ -19,13 +19,24 @@
   </a>
 </div>
 
-<div class="mb-3 d-flex gap-2">
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
   <span class="text-muted small">Status:</span>
   {% for s in ['Open','Remediated','Accepted Risk','False Positive'] %}
-    <a href="{{ url_for('vulns.index') }}?status={{ s }}{{ '&severity=' + severity_filter if severity_filter else '' }}"
+    <a href="{{ url_for('vulns.index') }}?status={{ s }}{{ '&severity=' + severity_filter if severity_filter else '' }}{{ '&cwe=' + cwe_filter if cwe_filter else '' }}"
        class="btn btn-xs {{ 'btn-accent' if status_filter == s else 'btn-outline-secondary' }}">{{ s }}</a>
   {% endfor %}
-  {% if status_filter %}
+  {% if cwes %}
+  <span class="text-muted small ms-2">CWE:</span>
+  <select class="form-select form-select-sm" style="width:auto;max-width:200px"
+          onchange="window.location=this.value">
+    <option value="{{ url_for('vulns.index') }}{{ '?severity=' + severity_filter if severity_filter else '' }}{{ '&status=' + status_filter if status_filter else '' }}">Todas CWEs</option>
+    {% for c in cwes %}
+      <option value="{{ url_for('vulns.index') }}?cwe={{ c.id }}{{ '&severity=' + severity_filter if severity_filter else '' }}{{ '&status=' + status_filter if status_filter else '' }}"
+              {{ 'selected' if cwe_filter == c.id|string else '' }}>{{ c.cwe_id }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+  {% if status_filter or cwe_filter %}
     <a href="{{ url_for('vulns.index') }}{{ '?severity=' + severity_filter if severity_filter else '' }}" class="btn btn-xs btn-outline-secondary">
       <i class="bi bi-x"></i> Limpar
     </a>
@@ -40,6 +51,7 @@
         <thead>
           <tr>
             <th>Título</th>
+            <th>CWE</th>
             <th>Severidade</th>
             <th>CVSS</th>
             <th>Relatório</th>
@@ -54,10 +66,19 @@
           <tr>
             <td>
               <a href="{{ url_for('reports.view', report_id=v.report_id) }}" class="text-white hover-accent fw-medium">
-                {{ v.title|truncate(50) }}
+                {{ v.title|truncate(45) }}
               </a>
               {% if v.cve_id %}
                 <span class="cve-badge ms-1">{{ v.cve_id }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if v.cwe %}
+                <a href="{{ url_for('vulns.index') }}?cwe={{ v.cwe.id }}" class="cve-badge text-decoration-none">
+                  {{ v.cwe.cwe_id }}
+                </a>
+              {% else %}
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td><span class="badge-sev badge-{{ v.severity|lower }}">{{ v.severity }}</span></td>

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-xl-10">
-    <form method="POST" novalidate>
+    <form method="POST" novalidate id="vuln-form">
       {{ form.hidden_tag() }}
       {% if report %}
         <input type="hidden" name="report_id" value="{{ report.id }}">
@@ -25,7 +25,7 @@
                 <option value="">Selecione um relatório...</option>
                 {% for r in reports %}
                   <option value="{{ r.id }}" {% if vuln and vuln.report_id == r.id %}selected{% endif %}>
-                    {{ r.title }} — {{ r.client.name }}
+                    {{ r.title }} — {{ r.product.name }}
                   </option>
                 {% endfor %}
               </select>
@@ -38,7 +38,7 @@
                 <a href="{{ url_for('reports.view', report_id=report.id) }}" class="text-accent">
                   {{ report.title }}
                 </a>
-                <span class="text-muted ms-2">— {{ report.client.name }}</span>
+                <span class="text-muted ms-2">— {{ report.product.name }}</span>
               </div>
             </div>
             {% endif %}
@@ -52,6 +52,17 @@
               {% endif %}
             </div>
 
+            <div class="col-md-4">
+              <label class="form-label">{{ form.cwe_id.label.text }}</label>
+              {{ form.cwe_id(class="form-select") }}
+              {% if form.cwe_id.choices|length <= 1 %}
+                <div class="form-text">
+                  <a href="{{ url_for('cwes.create') }}" class="text-accent" target="_blank">
+                    <i class="bi bi-plus me-1"></i>Cadastrar CWE
+                  </a>
+                </div>
+              {% endif %}
+            </div>
             <div class="col-md-3">
               <label class="form-label">{{ form.severity.label.text }}</label>
               {{ form.severity(class="form-select severity-select", id="severitySelect") }}
@@ -85,28 +96,21 @@
         </div>
       </div>
 
-      <!-- Details -->
+      <!-- Detalhes Técnicos -->
       <div class="card-dark mb-4">
         <div class="card-dark-header">
           <i class="bi bi-card-text me-2 text-accent"></i>Detalhes Técnicos
         </div>
         <div class="card-dark-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">{{ form.description.label.text }}</label>
-              {{ form.description(class="form-control", rows="4",
-                                  placeholder="Descrição detalhada da vulnerabilidade...") }}
-            </div>
-            <div class="col-12">
-              <label class="form-label">{{ form.proof_of_concept.label.text }}</label>
-              {{ form.proof_of_concept(class="form-control font-mono", rows="6",
-                                       placeholder="curl -X POST https://target.com/api/users\n  -d '{\"id\": \"1 OR 1=1\"}'") }}
-            </div>
+          <div class="col-12">
+            <label class="form-label">{{ form.description.label.text }}</label>
+            {{ form.description(class="form-control", rows="4",
+                                placeholder="Descrição detalhada da vulnerabilidade...") }}
           </div>
         </div>
       </div>
 
-      <!-- Impact & Remediation -->
+      <!-- Impacto e Remediação -->
       <div class="card-dark mb-4">
         <div class="card-dark-header">
           <i class="bi bi-shield-fill-exclamation me-2 text-accent"></i>Impacto e Remediação
@@ -132,7 +136,64 @@
         </div>
       </div>
 
-      <div class="d-flex gap-3 justify-content-end">
+      <!-- Evidências de Vulnerabilidade -->
+      <div class="card-dark mb-4">
+        <div class="card-dark-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-images me-2 text-accent"></i>Evidências de Vulnerabilidade</span>
+          <button type="button" class="btn btn-sm btn-outline-accent"
+                  data-bs-toggle="modal" data-bs-target="#evidenceModal">
+            <i class="bi bi-plus-lg me-1"></i>Adicionar Imagem
+          </button>
+        </div>
+        <div class="card-dark-body" id="evidence-container">
+
+          {% if vuln and vuln.evidences %}
+          <!-- Existing evidences (edit mode) -->
+          {% for ev in vuln.evidences %}
+          <div class="ev-existing d-flex gap-3 align-items-start mb-3 p-3 rounded"
+               style="border:1px solid #30363d;background:#0d1117">
+            <img src="{{ url_for('static', filename='ev/' + ev.filename) }}"
+                 class="rounded border flex-shrink-0"
+                 style="max-height:100px;max-width:140px;object-fit:cover;cursor:pointer"
+                 onclick="window.open(this.src)"
+                 alt="Imagem {{ loop.index }}">
+            <div class="flex-grow-1 min-w-0">
+              <label class="form-label small text-muted mb-1">
+                Legenda &mdash; <em>exibida como "Imagem {{ loop.index }} — legenda"</em>
+              </label>
+              <input type="text" name="evidence_desc_{{ ev.id }}" value="{{ ev.description }}"
+                     class="form-control form-control-sm mb-2"
+                     placeholder="Legenda da imagem {{ loop.index }}">
+              <label class="form-label small text-muted mb-1">Texto adicional (opcional)</label>
+              <textarea name="evidence_body_{{ ev.id }}" class="form-control form-control-sm" rows="3"
+                        placeholder="Texto exibido abaixo da imagem no relatório...">{{ ev.body_text or '' }}</textarea>
+            </div>
+            <form method="POST" action="{{ url_for('vulns.delete_evidence', ev_id=ev.id) }}"
+                  class="flex-shrink-0" onsubmit="return confirm('Excluir esta evidência?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-xs btn-outline-danger" title="Excluir">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+          {% endif %}
+
+          <!-- New evidences appended here by JS -->
+          <div id="evidence-new-list"></div>
+
+          <!-- Empty state -->
+          <div id="evidence-empty"
+               class="text-center py-4 text-muted small{% if vuln and vuln.evidences %} d-none{% endif %}">
+            <i class="bi bi-images d-block fs-2 opacity-25 mb-2"></i>
+            Nenhuma evidência. Clique em <strong>Adicionar Imagem</strong> para começar.
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="d-flex gap-3 justify-content-end mb-4">
         {% if report %}
           <a href="{{ url_for('reports.view', report_id=report.id) }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Voltar ao Relatório
@@ -150,27 +211,309 @@
           <i class="bi bi-check-lg me-1"></i>{{ form.submit.label.text }}
         </button>
       </div>
-    </form>
+    </form>{# end #vuln-form #}
+  </div>
+</div>
+
+{# ═══ Evidence Modal ════════════════════════════════════════════════════ #}
+<div class="modal fade" id="evidenceModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" style="background:#161b22;border:1px solid #30363d">
+
+      <div class="modal-header" style="border-color:#30363d">
+        <h5 class="modal-title">
+          <i class="bi bi-image me-2 text-accent"></i>Adicionar Evidência
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-4">
+
+        {# Tabs: arquivo ou colar base64 — usa Bootstrap Tab nativo para funcionar dentro do modal #}
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <button class="nav-link active" id="ev-tab-file" type="button"
+                    data-bs-toggle="tab" data-bs-target="#ev-panel-file">
+              <i class="bi bi-folder2-open me-1"></i>Arquivo
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="ev-tab-b64" type="button"
+                    data-bs-toggle="tab" data-bs-target="#ev-panel-b64">
+              <i class="bi bi-clipboard-data me-1"></i>Colar Base64
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content mb-3">
+          {# Painel: selecionar arquivo #}
+          <div class="tab-pane fade show active" id="ev-panel-file">
+            <input type="file" id="ev-file-input"
+                   class="form-control"
+                   accept="image/png,image/jpeg,image/gif,image/webp">
+            <div class="form-text">PNG · JPG · GIF · WEBP · máx 10 MB</div>
+          </div>
+
+          {# Painel: colar base64 #}
+          <div class="tab-pane fade" id="ev-panel-b64">
+            <input type="text" id="ev-b64-input" class="form-control font-mono"
+                   placeholder="Cole aqui o base64 da imagem — com ou sem o prefixo data:image/...;base64,">
+            <div class="form-text">
+              Aceita formato completo (<code>data:image/png;base64,...</code>) ou apenas os caracteres base64.
+            </div>
+            <button type="button" id="ev-b64-preview-btn" class="btn btn-sm btn-outline-secondary mt-2">
+              <i class="bi bi-eye me-1"></i>Pré-visualizar
+            </button>
+          </div>
+        </div>
+
+        {# Preview — aparece logo após selecionar/colar #}
+        <div id="ev-preview-wrap" style="display:none" class="mb-3 text-center">
+          <img id="ev-preview-img"
+               style="max-width:100%;max-height:400px;border-radius:6px;border:1px solid #444">
+          <div class="text-muted small mt-1" id="ev-preview-name"></div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Legenda</label>
+          <input type="text" id="ev-caption" class="form-control"
+                 placeholder="Ex: Login bypassed via SQL Injection">
+          <div class="form-text">Exibida como "Imagem N — legenda" no relatório</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Texto adicional <span class="text-muted small fst-italic">(opcional)</span></label>
+          <textarea id="ev-body-text" class="form-control" rows="4"
+                    placeholder="Descreva o que a imagem mostra, passos realizados, etc."></textarea>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="border-color:#30363d">
+        <button type="button" class="btn btn-outline-secondary"
+                data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="ev-save-btn" class="btn btn-accent" disabled>
+          <i class="bi bi-check-lg me-1"></i>Adicionar ao Relatório
+        </button>
+      </div>
+
+    </div>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Update severity select color
-const sevSelect = document.getElementById('severitySelect');
-const sevColors = {
-  'Critical': '#f85149', 'High': '#db6d28',
-  'Medium': '#d29922', 'Low': '#58a6ff', 'Informational': '#8b949e'
+var existingCount = {{ (vuln.evidences|length) if vuln and vuln.evidences else 0 }};
+var evModalFile   = null;   // File object (modo arquivo)
+var evBlobUrl     = null;   // blob: URL para preview de arquivo
+var evPastedB64   = null;   // base64 data-URI colado diretamente
+
+// ── Troca de aba via eventos nativos do Bootstrap Tab ─────────────────────
+document.getElementById('ev-tab-file').addEventListener('show.bs.tab', function () {
+  evPastedB64 = null;
+  document.getElementById('ev-b64-input').value = '';
+  evHidePreview();
+  document.getElementById('ev-save-btn').disabled = true;
+});
+
+document.getElementById('ev-tab-b64').addEventListener('show.bs.tab', function () {
+  evModalFile = null;
+  if (evBlobUrl) { URL.revokeObjectURL(evBlobUrl); evBlobUrl = null; }
+  document.getElementById('ev-file-input').value = '';
+  evHidePreview();
+  document.getElementById('ev-save-btn').disabled = true;
+});
+
+// ── Carregar base64 colado ────────────────────────────────────────────────
+function evLoadB64Input() {
+  var raw = document.getElementById('ev-b64-input').value.trim();
+  if (!raw) { alert('Cole o base64 antes de pré-visualizar.'); return; }
+
+  var dataUri;
+  // Aceita com prefixo completo ou só os bytes base64
+  if (/^data:image\/(png|jpeg|gif|webp);base64,/i.test(raw)) {
+    dataUri = raw;
+  } else {
+    // tenta detectar o tipo pelos primeiros bytes
+    var sig = raw.substring(0, 8);
+    var mime = 'image/png';
+    if (sig.startsWith('/9j/'))          mime = 'image/jpeg';
+    else if (sig.startsWith('R0lGOD'))   mime = 'image/gif';
+    else if (sig.startsWith('UklGRi') || sig.startsWith('AAABAA')) mime = 'image/webp';
+    dataUri = 'data:' + mime + ';base64,' + raw;
+  }
+
+  // Valida que é uma imagem real tentando carregar
+  var img = new Image();
+  img.onload = function () {
+    evPastedB64 = dataUri;
+    document.getElementById('ev-preview-img').src           = dataUri;
+    document.getElementById('ev-preview-name').textContent  = 'Imagem colada (' + Math.round(raw.length * 0.75 / 1024) + ' KB aprox.)';
+    document.getElementById('ev-preview-wrap').style.display = 'block';
+    document.getElementById('ev-save-btn').disabled         = false;
+  };
+  img.onerror = function () {
+    alert('Base64 inválido ou formato não suportado. Verifique o conteúdo colado.');
+  };
+  img.src = dataUri;
+}
+
+document.getElementById('ev-b64-preview-btn').addEventListener('click', evLoadB64Input);
+document.getElementById('ev-save-btn').addEventListener('click', commitEvidence);
+
+// ── onchange: preview imediato com createObjectURL (síncrono, sem async) ──
+document.getElementById('ev-file-input').onchange = function () {
+  var file = this.files[0];
+  if (!file) return;
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Imagem muito grande (máx 10 MB). Compacte antes de enviar.');
+    this.value = '';
+    return;
+  }
+
+  // Revoga blob anterior se existir
+  if (evBlobUrl) { URL.revokeObjectURL(evBlobUrl); }
+
+  evBlobUrl   = URL.createObjectURL(file);  // síncrono — nunca falha
+  evModalFile = file;
+
+  document.getElementById('ev-preview-img').src              = evBlobUrl;
+  document.getElementById('ev-preview-name').textContent     = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+  document.getElementById('ev-preview-wrap').style.display   = 'block';
+  document.getElementById('ev-save-btn').disabled            = false;
 };
+
+function evHidePreview() {
+  document.getElementById('ev-preview-img').src             = '';
+  document.getElementById('ev-preview-wrap').style.display  = 'none';
+  document.getElementById('ev-preview-name').textContent    = '';
+}
+
+document.getElementById('evidenceModal').addEventListener('hidden.bs.modal', function () {
+  if (evBlobUrl) { URL.revokeObjectURL(evBlobUrl); evBlobUrl = null; }
+  evModalFile = null;
+  evPastedB64 = null;
+  document.getElementById('ev-file-input').value  = '';
+  document.getElementById('ev-b64-input').value   = '';
+  document.getElementById('ev-save-btn').disabled = true;
+  document.getElementById('ev-caption').value     = '';
+  document.getElementById('ev-body-text').value   = '';
+  evHidePreview();
+  // volta para aba de arquivo usando a API do Bootstrap Tab
+  bootstrap.Tab.getOrCreateInstance(document.getElementById('ev-tab-file')).show();
+});
+
+// ── commitEvidence: lida com arquivo (FileReader) ou base64 colado ────────
+function commitEvidence() {
+  if (!evModalFile && !evPastedB64) { alert('Selecione ou cole uma imagem primeiro.'); return; }
+
+  var btn = document.getElementById('ev-save-btn');
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processando&hellip;';
+
+  // Se veio de colar base64, pula o FileReader e vai direto para _doCommit
+  if (evPastedB64) {
+    _doCommit(evPastedB64);
+    return;
+  }
+
+  var file = evModalFile;
+  var reader = new FileReader();
+
+  reader.onload = function (e) {
+    var b64 = e.target.result;
+    _doCommit(b64);
+  };
+  reader.onerror = function () {
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Adicionar ao Relatório';
+    alert('Erro ao processar a imagem. Tente novamente ou use a aba "Colar Base64".');
+  };
+  reader.readAsDataURL(file);
+}
+
+function _doCommit(b64) {
+  var btn      = document.getElementById('ev-save-btn');
+  var caption  = document.getElementById('ev-caption').value.trim();
+  var bodyText = document.getElementById('ev-body-text').value.trim();
+  var idx      = existingCount + document.querySelectorAll('.ev-new-row').length + 1;
+  var rowLabel = caption ? 'Imagem ' + idx + ' \u2014 ' + caption : 'Imagem ' + idx;
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var b64Area       = document.createElement('textarea');
+  b64Area.name      = 'evidence_b64[]';
+  b64Area.style.display = 'none';
+  b64Area.value     = b64;
+
+  var descInput     = document.createElement('input');
+  descInput.type    = 'hidden';
+  descInput.name    = 'evidence_descriptions[]';
+  descInput.value   = caption;
+
+  var bodyInput     = document.createElement('input');
+  bodyInput.type    = 'hidden';
+  bodyInput.name    = 'evidence_bodies[]';
+  bodyInput.value   = bodyText;
+
+  var row           = document.createElement('div');
+  row.className     = 'ev-new-row d-flex gap-3 align-items-start mb-3 p-3 rounded';
+  row.style.cssText = 'border:1px solid #30363d;background:#0d1117';
+
+  var thumb         = document.createElement('img');
+  thumb.src         = b64;
+  thumb.className   = 'rounded border flex-shrink-0';
+  thumb.style.cssText = 'max-height:100px;max-width:140px;object-fit:cover';
+  thumb.alt         = rowLabel;
+
+  var info          = document.createElement('div');
+  info.className    = 'flex-grow-1 min-w-0';
+  info.innerHTML    = '<div class="small fw-bold mb-1">' + esc(rowLabel) + '</div>';
+  if (bodyText) {
+    var snippet = bodyText.length > 120 ? bodyText.slice(0, 120) + '…' : bodyText;
+    info.innerHTML += '<div class="text-muted small mt-1" style="white-space:pre-wrap">' + esc(snippet) + '</div>';
+  }
+
+  var removeBtn       = document.createElement('button');
+  removeBtn.type      = 'button';
+  removeBtn.className = 'btn btn-xs btn-outline-danger flex-shrink-0';
+  removeBtn.title     = 'Remover';
+  removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+  removeBtn.onclick   = function () {
+    row.remove();
+    if (!document.querySelector('.ev-new-row') && existingCount === 0)
+      document.getElementById('evidence-empty').classList.remove('d-none');
+  };
+
+  row.appendChild(thumb);
+  row.appendChild(info);
+  row.appendChild(removeBtn);
+  row.appendChild(b64Area);
+  row.appendChild(descInput);
+  row.appendChild(bodyInput);
+
+  document.getElementById('evidence-new-list').appendChild(row);
+  document.getElementById('evidence-empty').classList.add('d-none');
+
+  btn.disabled  = false;
+  btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Adicionar ao Relatório';
+
+  var modalEl = document.getElementById('evidenceModal');
+  (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)).hide();
+}
+
+/* severity colour */
+var sevSelectEl = document.getElementById('severitySelect');
+var sevColors = {Critical:'#f85149',High:'#db6d28',Medium:'#d29922',Low:'#58a6ff',Informational:'#8b949e'};
 function updateSevColor() {
-  const color = sevColors[sevSelect.value] || '#8b949e';
-  sevSelect.style.color = color;
-  sevSelect.style.borderColor = color + '66';
+  var c = sevColors[sevSelectEl.value] || '#8b949e';
+  sevSelectEl.style.color = c;
+  sevSelectEl.style.borderColor = c + '66';
 }
-if (sevSelect) {
-  sevSelect.addEventListener('change', updateSevColor);
-  updateSevColor();
-}
+if (sevSelectEl) { sevSelectEl.addEventListener('change', updateSevColor); updateSevColor(); }
 </script>
 {% endblock %}

@@ -1,52 +1,80 @@
 {% extends 'base.html' %}
-{% block title %}Clientes{% endblock %}
-{% block page_title %}Clientes{% endblock %}
+{% block title %}Produtos{% endblock %}
+{% block page_title %}Produtos / Alvos{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-end mb-4">
-  <a href="{{ url_for('clients.create') }}" class="btn btn-accent">
-    <i class="bi bi-plus-lg me-1"></i>Novo Cliente
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('products.index') }}"
+       class="btn btn-sm {{ 'btn-accent' if not type_filter else 'btn-outline-secondary' }}">Todos</a>
+    {% for t in ['Web Application','Mobile App','API','Network/Infrastructure','Cloud','Desktop','Embedded','Physical','Other'] %}
+      <a href="{{ url_for('products.index') }}?type={{ t }}"
+         class="btn btn-sm {{ 'btn-accent' if type_filter == t else 'btn-outline-secondary' }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+  <a href="{{ url_for('products.create') }}" class="btn btn-accent">
+    <i class="bi bi-plus-lg me-1"></i>Novo Produto
   </a>
 </div>
 
-{% if clients %}
+{% if products %}
 <div class="row g-3">
-  {% for client in clients %}
+  {% for product in products %}
   <div class="col-12 col-md-6 col-xl-4">
     <div class="card-dark client-card">
       <div class="client-card-body">
-        <div class="client-avatar">
-          {{ client.name[:2].upper() }}
+        <div class="client-avatar" style="font-size:20px;display:flex;align-items:center;justify-content:center">
+          {% if product.product_type == 'Mobile App' %}
+            <i class="bi bi-phone-fill"></i>
+          {% elif product.product_type == 'Web Application' %}
+            <i class="bi bi-globe2"></i>
+          {% elif product.product_type == 'API' %}
+            <i class="bi bi-braces"></i>
+          {% elif product.product_type == 'Network/Infrastructure' %}
+            <i class="bi bi-hdd-network-fill"></i>
+          {% elif product.product_type == 'Cloud' %}
+            <i class="bi bi-cloud-fill"></i>
+          {% else %}
+            <i class="bi bi-box-fill"></i>
+          {% endif %}
         </div>
         <div class="client-info">
-          <h6 class="client-name">{{ client.name }}</h6>
-          {% if client.industry %}
-            <div class="client-industry"><i class="bi bi-briefcase me-1"></i>{{ client.industry }}</div>
+          <h6 class="client-name">{{ product.name }}</h6>
+          {% if product.product_type %}
+            <div class="client-industry">
+              <i class="bi bi-tag me-1"></i>{{ product.product_type }}
+              {% if product.platform %} · {{ product.platform }}{% endif %}
+            </div>
           {% endif %}
-          {% if client.contact_name %}
-            <div class="client-contact"><i class="bi bi-person me-1"></i>{{ client.contact_name }}</div>
+          {% if product.owner %}
+            <div class="client-contact"><i class="bi bi-building me-1"></i>{{ product.owner }}</div>
           {% endif %}
-          {% if client.contact_email %}
-            <div class="client-contact"><i class="bi bi-envelope me-1"></i>{{ client.contact_email }}</div>
+          {% if product.target_url %}
+            <div class="client-contact text-accent" style="font-size:12px;word-break:break-all">
+              <i class="bi bi-link-45deg me-1"></i>{{ product.target_url|truncate(50) }}
+            </div>
           {% endif %}
-          {% if client.contact_phone %}
-            <div class="client-contact"><i class="bi bi-telephone me-1"></i>{{ client.contact_phone }}</div>
+          {% if product.contact_name %}
+            <div class="client-contact"><i class="bi bi-person me-1"></i>{{ product.contact_name }}</div>
+          {% endif %}
+          {% if product.contact_email %}
+            <div class="client-contact"><i class="bi bi-envelope me-1"></i>{{ product.contact_email }}</div>
           {% endif %}
         </div>
       </div>
       <div class="client-card-footer">
         <span class="text-muted small">
-          <i class="bi bi-file-earmark-text me-1"></i>{{ client.reports.count() }} relatório(s)
+          <i class="bi bi-file-earmark-text me-1"></i>{{ product.reports.count() }} relatório(s)
         </span>
         <div class="d-flex gap-2">
-          <a href="{{ url_for('clients.edit', client_id=client.id) }}" class="btn btn-xs btn-outline-secondary">
+          <a href="{{ url_for('products.edit', product_id=product.id) }}" class="btn btn-xs btn-outline-secondary">
             <i class="bi bi-pencil"></i>
           </a>
-          <form method="POST" action="{{ url_for('clients.delete', client_id=client.id) }}" class="d-inline"
-                onsubmit="return confirm('Excluir {{ client.name }}?')">
+          <form method="POST" action="{{ url_for('products.delete', product_id=product.id) }}" class="d-inline"
+                onsubmit="return confirm('Excluir {{ product.name }}?')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-xs btn-outline-danger"
-                    {% if client.reports.count() > 0 %}disabled title="Possui relatórios associados"{% endif %}>
+                    {% if product.reports.count() > 0 %}disabled title="Possui relatórios associados"{% endif %}>
               <i class="bi bi-trash"></i>
             </button>
           </form>
@@ -58,11 +86,11 @@
 </div>
 {% else %}
 <div class="empty-state-page">
-  <div class="empty-icon"><i class="bi bi-buildings"></i></div>
-  <h4>Nenhum cliente cadastrado</h4>
-  <p class="text-muted">Cadastre um cliente para começar a criar relatórios.</p>
-  <a href="{{ url_for('clients.create') }}" class="btn btn-accent mt-2">
-    <i class="bi bi-plus-lg me-1"></i>Novo Cliente
+  <div class="empty-icon"><i class="bi bi-box"></i></div>
+  <h4>Nenhum produto / alvo cadastrado</h4>
+  <p class="text-muted">Cadastre o produto ou alvo testado para criar relatórios.</p>
+  <a href="{{ url_for('products.create') }}" class="btn btn-accent mt-2">
+    <i class="bi bi-plus-lg me-1"></i>Novo Produto
   </a>
 </div>
 {% endif %}

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 from sqlalchemy import func
-from app.models import Report, Vulnerability, Client, User
+from app.models import Report, Vulnerability, Product, User, CWE
 from app import db
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -12,11 +12,9 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @login_required
 def index():
     total_reports = Report.query.count()
-    total_clients = Client.query.count()
+    total_products = Product.query.count()
     total_vulns = Vulnerability.query.count()
-    open_vulns = Vulnerability.query.filter_by(status='Open').count()
-    critical_vulns = Vulnerability.query.filter_by(severity='Critical', status='Open').count()
-    high_vulns = Vulnerability.query.filter_by(severity='High', status='Open').count()
+    total_cwes = CWE.query.count()
 
     reports_by_status = db.session.query(
         Report.status, func.count(Report.id)
@@ -36,25 +34,34 @@ def index():
                       .order_by(Report.created_at.desc())
                       .limit(5).all())
 
-    recent_vulns = (Vulnerability.query
-                    .filter_by(status='Open')
-                    .order_by(Vulnerability.severity_order.asc(),
-                               Vulnerability.created_at.desc())
-                    .limit(5).all())
+    # Top 10 CWEs by number of vulnerabilities
+    top_cwes = (
+        db.session.query(CWE, func.count(Vulnerability.id).label('vuln_count'))
+        .join(Vulnerability, Vulnerability.cwe_id == CWE.id)
+        .group_by(CWE.id)
+        .order_by(func.count(Vulnerability.id).desc())
+        .limit(10)
+        .all()
+    )
+
+    # CWE occurrences for chart (all CWEs with at least 1 vuln)
+    cwe_chart_data = [
+        {'label': c.cwe_id, 'name': c.name, 'count': cnt}
+        for c, cnt in top_cwes
+    ]
 
     my_reports = Report.query.filter_by(author_id=current_user.id).count()
 
     return render_template('dashboard/index.html',
                            total_reports=total_reports,
-                           total_clients=total_clients,
+                           total_products=total_products,
                            total_vulns=total_vulns,
-                           open_vulns=open_vulns,
-                           critical_vulns=critical_vulns,
-                           high_vulns=high_vulns,
+                           total_cwes=total_cwes,
                            status_labels=status_labels,
                            status_counts=status_counts,
                            sev_labels=sev_labels,
                            sev_counts=sev_counts,
                            recent_reports=recent_reports,
-                           recent_vulns=recent_vulns,
+                           top_cwes=top_cwes,
+                           cwe_chart_data=cwe_chart_data,
                            my_reports=my_reports)

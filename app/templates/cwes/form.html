@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-7">
+    <div class="card-dark">
+      <div class="card-dark-header">
+        <i class="bi bi-diagram-2-fill me-2 text-accent"></i>Dados da CWE
+      </div>
+      <div class="card-dark-body">
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="row g-3">
+
+            <div class="col-md-4">
+              <label class="form-label">{{ form.cwe_id.label.text }} <span class="text-danger">*</span></label>
+              {{ form.cwe_id(class="form-control font-mono" + (" is-invalid" if form.cwe_id.errors else ""),
+                             placeholder="CWE-79") }}
+              {% if form.cwe_id.errors %}
+                <div class="invalid-feedback">{{ form.cwe_id.errors[0] }}</div>
+              {% endif %}
+              <div class="form-text text-muted">Ex: CWE-79, CWE-89, CWE-22</div>
+            </div>
+
+            <div class="col-md-8">
+              <label class="form-label">{{ form.name.label.text }} <span class="text-danger">*</span></label>
+              {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""),
+                           placeholder="Improper Neutralization of Input During Web Page Generation") }}
+              {% if form.name.errors %}
+                <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">{{ form.description.label.text }}</label>
+              {{ form.description(class="form-control", rows="4",
+                                  placeholder="Descrição da fraqueza, impacto e contexto de uso...") }}
+            </div>
+
+          </div>
+
+          <div class="d-flex gap-3 justify-content-end mt-4">
+            <a href="{{ url_for('cwes.index') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-lg me-1"></i>Cancelar
+            </a>
+            <button type="submit" class="btn btn-accent">
+              <i class="bi bi-check-lg me-1"></i>{{ form.submit.label.text }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick reference for common CWEs -->
+    <div class="card-dark mt-3">
+      <div class="card-dark-header">
+        <i class="bi bi-lightbulb me-2 text-accent"></i>CWEs Comuns
+      </div>
+      <div class="card-dark-body">
+        <div class="row g-2" style="font-size:12px">
+          {% for cid, cname in [
+            ('CWE-79','Cross-site Scripting (XSS)'),
+            ('CWE-89','SQL Injection'),
+            ('CWE-22','Path Traversal'),
+            ('CWE-78','OS Command Injection'),
+            ('CWE-352','CSRF'),
+            ('CWE-200','Exposure of Sensitive Information'),
+            ('CWE-287','Improper Authentication'),
+            ('CWE-798','Use of Hard-coded Credentials'),
+            ('CWE-502','Deserialization of Untrusted Data'),
+            ('CWE-918','SSRF'),
+            ('CWE-611','XXE Injection'),
+            ('CWE-94','Code Injection'),
+          ] %}
+          <div class="col-md-6">
+            <button type="button" class="btn btn-xs btn-outline-secondary w-100 text-start cwe-quick"
+                    data-id="{{ cid }}" data-name="{{ cname }}">
+              <span class="text-accent font-mono">{{ cid }}</span> — {{ cname }}
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.cwe-quick').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('[name="cwe_id"]').value = btn.dataset.id;
+    const nameField = document.querySelector('[name="name"]');
+    if (!nameField.value) nameField.value = btn.dataset.name;
+  });
+});
+</script>
+{% endblock %}

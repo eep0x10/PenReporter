@@ -20,6 +20,9 @@ class Config:
         'pool_pre_ping': True,
     }
     WTF_CSRF_ENABLED = True
+    # Permite formulários com imagens base64 grandes (múltiplas evidências)
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024      # 50 MB – total do body
+    MAX_FORM_MEMORY_SIZE = 50 * 1024 * 1024    # 50 MB – campos de texto (base64)
 
 
 class DevelopmentConfig(Config):

@@ -102,7 +102,6 @@ fi
 # Activate venv
 source .venv/bin/activate
 success "Virtualenv ativado"
-
 # ═══════════════════════════════════════════════════════════
 step "Instalando dependências Python"
 # ═══════════════════════════════════════════════════════════

@@ -1,600 +1,701 @@
+{%- set year = report.start_date.year if report.start_date else report.created_at.year -%}
+{%- set doc_id -%}TDI-{{ year }}-{{ '%03d'|format(report.id) }}{%- endset -%}
+{%- set sev_pt = {'Critical': 'Crítica', 'High': 'Alta', 'Medium': 'Média', 'Low': 'Baixa', 'Informational': 'Informativa'} -%}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-  :root {
-    --bg: #ffffff;
-    --surface: #f5f5f5;
-    --border: #d0d0d0;
-    --text: #1a1a1a;
-    --muted: #666666;
-    --accent: #0066cc;
-    --critical: #d1242f;
-    --high: #ff6b35;
-    --medium: #ffa500;
-    --low: #0066cc;
-    --info: #666666;
-    --green: #2da44e;
+/* ── Page Setup ─────────────────────────────────────────────── */
+@page {
+  size: A4;
+  margin: 2cm 1.9cm 2.3cm 1.9cm;
+
+  @top-left  { content: ''; }
+  @top-right {
+    content: 'CONFIDENCIAL';
+    font-size: 8pt;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    color: #444444;
+    border: 1pt solid #444444;
+    padding: 2pt 6pt;
+    margin-top: 4pt;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 11pt;
-    line-height: 1.6;
-  }
-
-  /* Cover Page */
-  .cover {
-    page-break-after: always;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 50%, #ffffff 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 80px 60px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .cover::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 20% 50%, rgba(0,102,204,.04) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(100,120,200,.03) 0%, transparent 50%);
-  }
-
-  .cover-accent-line {
-    width: 60px;
-    height: 4px;
-    background: linear-gradient(90deg, #0066cc, #6476c8);
-    border-radius: 2px;
-    margin-bottom: 32px;
-  }
-
-  .cover-label {
-    font-size: 11pt;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    font-weight: 500;
-    margin-bottom: 16px;
-  }
-
-  .cover-title {
-    font-size: 32pt;
-    font-weight: 700;
-    color: #000000;
-    line-height: 1.2;
-    margin-bottom: 24px;
-    max-width: 600px;
-  }
-
-  .cover-client {
-    font-size: 16pt;
-    color: var(--muted);
-    margin-bottom: 48px;
-  }
-
-  .cover-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 60px;
-  }
-
-  .cover-meta-item {
-    display: flex;
-    gap: 16px;
-  }
-
-  .cover-meta-label {
-    color: var(--muted);
-    font-size: 10pt;
-    width: 120px;
-    flex-shrink: 0;
-  }
-
-  .cover-meta-value {
-    color: var(--text);
-    font-size: 10pt;
-    font-weight: 500;
-  }
-
-  .cover-confidential {
-    position: absolute;
-    top: 40px;
-    right: 60px;
-    border: 1px solid rgba(209,36,47,.6);
-    color: #d1242f;
-    padding: 6px 16px;
-    font-size: 9pt;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 600;
-  }
-
-  .cover-risk-badge {
-    display: inline-block;
-    padding: 8px 20px;
-    border-radius: 4px;
-    font-size: 12pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-  }
-
-  .risk-critical { background: rgba(209,36,47,.1); color: #d1242f; border: 1px solid rgba(209,36,47,.4); }
-  .risk-high { background: rgba(255,107,53,.1); color: #ff6b35; border: 1px solid rgba(255,107,53,.4); }
-  .risk-medium { background: rgba(255,165,0,.1); color: #ffa500; border: 1px solid rgba(255,165,0,.4); }
-  .risk-low { background: rgba(0,102,204,.1); color: #0066cc; border: 1px solid rgba(0,102,204,.4); }
-
-  /* Content pages */
-  .page { padding: 50px 60px; page-break-before: avoid; margin: 0; }
-
-  .section-title {
-    font-size: 18pt;
-    font-weight: 700;
-    color: #000000;
-    margin-bottom: 16px;
-    margin-top: 0;
-    padding-bottom: 14px;
-    border-bottom: 2px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    page-break-after: avoid;
-  }
-
-  .section-accent {
-    width: 4px;
-    height: 24px;
-    background: linear-gradient(180deg, #0066cc, #6476c8);
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  h2 { font-size: 14pt; font-weight: 600; color: #000000; margin: 28px 0 14px; page-break-after: avoid; }
-  h3 { font-size: 11pt; font-weight: 600; color: #000000; margin: 18px 0 10px; page-break-after: avoid; }
-  p { margin-bottom: 14px; color: var(--text); line-height: 1.6; }
-  pre, code { font-family: 'JetBrains Mono', monospace; font-size: 9pt; }
-
-  .text-muted { color: var(--muted); }
-
-  /* Findings Summary Table */
-  .findings-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 28px;
-    font-size: 9pt;
-    page-break-inside: avoid;
-  }
-
-  .findings-table th {
-    background: #f5f5f5;
+  @bottom-left {
+    content: '{{ doc_id }}';
+    font-size: 8pt;
+    font-family: Arial, sans-serif;
     color: #666666;
-    padding: 12px 14px;
-    text-align: left;
-    font-weight: 600;
-    text-transform: uppercase;
+  }
+  @bottom-center { content: none; }
+  @bottom-right {
+    content: 'Página ' counter(page) ' / ' counter(pages);
     font-size: 8pt;
-    letter-spacing: 1px;
-    border: 1px solid var(--border);
+    font-family: Arial, sans-serif;
+    color: #666666;
   }
+}
 
-  .findings-table td {
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    color: #1a1a1a;
-    vertical-align: middle;
-    line-height: 1.5;
-  }
+@page cover {
+  margin: 0;
+  @top-left   { content: none; }
+  @top-right  { content: none; }
+  @bottom-left  { content: none; }
+  @bottom-center { content: none; }
+  @bottom-right { content: none; }
+}
 
-  .findings-table tr:nth-child(even) td { background: #fafafa; }
+/* ── Base ───────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* Severity badges */
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 3px;
-    font-size: 8pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  color: #000000;
+  background: #ffffff;
+  line-height: 1.5;
+}
 
-  .badge-critical { background: rgba(209,36,47,.15); color: #d1242f; }
-  .badge-high { background: rgba(255,107,53,.15); color: #ff6b35; }
-  .badge-medium { background: rgba(255,165,0,.15); color: #ffa500; }
-  .badge-low { background: rgba(0,102,204,.15); color: #0066cc; }
-  .badge-informational { background: rgba(100,100,100,.15); color: #666666; }
-  .badge-open { background: rgba(209,36,47,.15); color: #d1242f; }
-  .badge-remediated { background: rgba(45,164,78,.15); color: #2da44e; }
-  .badge-accepted { background: rgba(255,165,0,.15); color: #ffa500; }
-  .badge-fp { background: rgba(100,100,100,.15); color: #666666; }
+p {
+  margin-bottom: 9pt;
+  text-align: justify;
+  line-height: 1.6;
+}
 
-  /* Vuln card */
-  .vuln-card {
-    background: #f5f5f5;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    margin-bottom: 24px;
-    margin-top: 12px;
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
+p.pre { white-space: pre-wrap; text-align: left; }
 
-  .vuln-card-header {
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    page-break-after: avoid;
-  }
+ul, ol { margin: 6pt 0 9pt 20pt; }
+li { margin-bottom: 3pt; }
 
-  .vuln-card-title {
-    font-size: 12pt;
-    font-weight: 600;
-    color: #000000;
-    flex: 1;
-    line-height: 1.4;
-  }
+/* ── Section Headings ───────────────────────────────────────── */
+.h1 {
+  font-size: 16pt;
+  font-weight: bold;
+  color: #365F91;
+  padding-bottom: 5pt;
+  border-bottom: 1.5pt solid #95B3D7;
+  margin-bottom: 14pt;
+  page-break-after: avoid;
+}
 
-  .vuln-card-body { padding: 18px 18px; line-height: 1.7; }
+.h2 {
+  font-size: 12pt;
+  font-weight: bold;
+  color: #365F91;
+  margin: 14pt 0 7pt;
+  page-break-after: avoid;
+}
 
-  .vuln-meta {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-  }
+.section { page-break-before: always; }
 
-  .vuln-meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
+/* ── Cover ──────────────────────────────────────────────────── */
+.cover {
+  page: cover;
+  width: 21cm;
+  height: 29.7cm;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
 
-  .vuln-meta-label {
-    font-size: 8pt;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+.cover-topbar {
+  padding: 0.9cm 1.9cm 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
 
-  .vuln-meta-value {
-    font-size: 10pt;
-    color: var(--text);
-    font-weight: 500;
-  }
+.cover-confidential {
+  font-size: 9pt;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #333333;
+  border: 1pt solid #333333;
+  padding: 3pt 9pt;
+  text-transform: uppercase;
+}
 
-  .vuln-section { margin-top: 16px; page-break-inside: avoid; }
+.cover-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1.5cm 2.5cm;
+  gap: 18pt;
+}
 
-  .vuln-section-label {
-    font-size: 9pt;
-    color: #0066cc;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
+.cover-main-title {
+  font-size: 26pt;
+  font-weight: bold;
+  color: #000000;
+  line-height: 1.2;
+}
 
-  .code-block {
-    background: #f0f0f0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8pt;
-    line-height: 1.5;
-    color: #0d5c2a;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-    word-break: break-all;
-    page-break-inside: avoid;
-  }
+.cover-scope {
+  font-size: 20pt;
+  font-weight: bold;
+  color: #1F497D;
+  line-height: 1.3;
+}
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-    margin-bottom: 36px;
-    page-break-inside: avoid;
-  }
-  }
+.cover-date {
+  font-size: 14pt;
+  font-weight: bold;
+  color: #333333;
+}
 
-  .stat-box {
-    background: #f5f5f5;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 18px 14px;
-    text-align: center;
-  }
+.cover-footer {
+  background: #1F497D;
+  padding: 0.7cm 1.9cm;
+  text-align: center;
+  color: #ffffff;
+}
 
-  .stat-box-num {
-    font-size: 24pt;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
+.cover-footer-line1 { font-size: 16pt; font-weight: normal; margin-bottom: 3pt; }
+.cover-footer-line2 { font-size: 14pt; font-weight: normal; }
 
-  .stat-box-label {
-    font-size: 8pt;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+/* ── Summary Table (TABLE 1) ─────────────────────────────────── */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  margin: 10pt 0 14pt;
+}
 
-  .color-critical { color: #d1242f; }
-  .color-high { color: #ff6b35; }
-  .color-medium { color: #ffa500; }
-  .color-low { color: #0066cc; }
-  .color-info { color: #666666; }
+.summary-table th {
+  background: #000000;
+  color: #ffffff;
+  padding: 6pt 9pt;
+  text-align: left;
+  font-weight: bold;
+  border: 1pt solid #000000;
+}
 
-  /* Page header (footer) */
-  @page {
-    size: A4;
-    margin: 50px 60px;
-    @bottom-center {
-      content: counter(page) " / " counter(pages);
-      font-size: 9pt;
-      color: #999999;
-      margin-top: 20px;
-    }
-    @top-right {
-      font-size: 9pt;
-      color: #999999;
-    }
-  }
+.summary-table td {
+  padding: 5pt 9pt;
+  border: 1pt solid #BFBFBF;
+  vertical-align: middle;
+}
 
-  @page:first {
-    margin: 0;
-  }
+.summary-table tr:nth-child(even) td { background: #F5F5F5; }
+
+/* Severity cells */
+.sc-critical     { background:#7030A0; color:#ffffff; font-weight:bold; text-align:center; }
+.sc-high         { background:#FF0000; color:#ffffff; font-weight:bold; text-align:center; }
+.sc-medium       { background:#FFFF00; color:#000000; font-weight:bold; text-align:center; }
+.sc-low          { background:#00B0F0; color:#000000; font-weight:bold; text-align:center; }
+.sc-informational{ background:#BFBFBF; color:#000000; font-weight:bold; text-align:center; }
+
+/* ── CVSS Legend (TABLE 2) ───────────────────────────────────── */
+.cvss-legend {
+  border-collapse: collapse;
+  font-size: 9pt;
+  margin: 4pt 0 14pt;
+}
+
+.cvss-legend td {
+  padding: 4pt 14pt;
+  border: 1pt solid #888888;
+  font-weight: bold;
+  text-align: center;
+  min-width: 90pt;
+}
+
+/* ── Properties & History Tables ─────────────────────────────── */
+.props-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin-top: 10pt;
+}
+
+.props-table td {
+  padding: 6pt 10pt;
+  border: 1pt solid #BFBFBF;
+  vertical-align: top;
+}
+
+.props-table td.label {
+  background: #1F497D;
+  color: #ffffff;
+  font-weight: bold;
+  width: 32%;
+  white-space: nowrap;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin-top: 10pt;
+}
+
+.history-table th {
+  background: #1F497D;
+  color: #ffffff;
+  padding: 6pt 10pt;
+  border: 1pt solid #1F497D;
+  font-weight: bold;
+  text-align: left;
+}
+
+.history-table td {
+  padding: 5pt 10pt;
+  border: 1pt solid #BFBFBF;
+  vertical-align: middle;
+}
+
+/* ── Vulnerability Card (TABLE 3) ────────────────────────────── */
+.vuln-card {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin: 8pt 0 24pt;
+  border: 1pt solid #1F497D;
+}
+
+.vuln-card td { vertical-align: top; padding: 5pt 9pt; }
+
+/* Dark navy header rows */
+.vh {
+  background: #1F497D;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 9.5pt;
+  letter-spacing: 0.3px;
+  border: 1pt solid #1F497D !important;
+  padding: 5pt 9pt;
+}
+
+/* Light-blue sub-header */
+.vs {
+  background: #95B3D7;
+  color: #000000;
+  font-weight: bold;
+  font-size: 9pt;
+  border: 1pt solid #7090B0 !important;
+  padding: 4pt 9pt;
+}
+
+/* White body cells */
+.vb {
+  background: #ffffff;
+  border: 1pt solid #BFBFBF;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* Code/PoC body */
+.vc {
+  background: #F4F4F4;
+  border: 1pt solid #BFBFBF;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8.5pt;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+/* Severity value cell variants */
+.vs-critical { background:#7030A0; color:#ffffff; font-weight:bold; font-size:11pt; text-align:center; border:1pt solid #5A2080 !important; }
+.vs-high     { background:#FF0000; color:#ffffff; font-weight:bold; font-size:11pt; text-align:center; border:1pt solid #CC0000 !important; }
+.vs-medium   { background:#FFFF00; color:#000000; font-weight:bold; font-size:11pt; text-align:center; border:1pt solid #CCCC00 !important; }
+.vs-low      { background:#00B0F0; color:#000000; font-weight:bold; font-size:11pt; text-align:center; border:1pt solid #0090C0 !important; }
+.vs-informational { background:#BFBFBF; color:#000000; font-weight:bold; font-size:11pt; text-align:center; border:1pt solid #999999 !important; }
+
 </style>
 </head>
 <body>
 
-<!-- COVER PAGE -->
+{# ═══════════════════════════════ CAPA ════════════════════════════════ #}
 <div class="cover">
-  <div class="cover-confidential">CONFIDENCIAL</div>
-
-  <div class="cover-accent-line"></div>
-  <div class="cover-label">Relatório de Pentest</div>
-  <div class="cover-title">{{ report.title }}</div>
-  <div class="cover-client">{{ report.client.name }}</div>
-
-  {% if report.overall_risk %}
-  <div class="mb-4">
-    <span class="cover-risk-badge risk-{{ report.overall_risk|lower }}">
-      Risco {{ report.overall_risk }}<br>
-      {{ counts[report.overall_risk] }} Vulnerabilidades<br>
-    </span>
+  <div class="cover-topbar">
+    <div class="cover-confidential">CONFIDENCIAL</div>
   </div>
+
+  <div class="cover-body">
+    <div class="cover-main-title">RELATÓRIO DE TESTE DE INTRUSÃO</div>
+    <div class="cover-scope">{{ report.product.name }}</div>
+    <div class="cover-date">
+      {%- if report.start_date -%}
+        {{ report.start_date.strftime('%d/%m/%Y') }}
+        {%- if report.end_date %} – {{ report.end_date.strftime('%d/%m/%Y') }}{% endif %}
+      {%- else -%}
+        {{ report.created_at.strftime('%d/%m/%Y') }}
+      {%- endif -%}
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div class="cover-footer-line1">DITI - CIBERSEGURANÇA</div>
+    <div class="cover-footer-line2">SEGURANÇA OFENSIVA</div>
+  </div>
+</div>
+
+
+{# ═══════════════════ 1. SUMÁRIO EXECUTIVO ═══════════════════════════ #}
+<div class="section">
+  <div class="h1">1. SUMÁRIO EXECUTIVO</div>
+
+  <div class="h2">1.1 Contexto e Objetivos do Teste</div>
+  {% if report.executive_summary %}
+    <p class="pre">{{ report.executive_summary }}</p>
+  {% else %}
+    <p>Descrever de forma clara e sucinta o contexto do teste e os objetivos almejados.</p>
   {% endif %}
 
-  <div class="cover-meta">
-    <div class="cover-meta-item">
-      <span class="cover-meta-label">Tipo de Teste</span>
-      <span class="cover-meta-value">{{ report.report_type }}</span>
-    </div>
-    <div class="cover-meta-item">
-      <span class="cover-meta-label">Pentester</span>
-      <span class="cover-meta-value">{{ report.author.full_name }}</span>
-    </div>
-    {% if report.start_date %}
-    <div class="cover-meta-item">
-      <span class="cover-meta-label">Período</span>
-      <span class="cover-meta-value">
-        {{ report.start_date.strftime('%d/%m/%Y') }}
-        {% if report.end_date %} — {{ report.end_date.strftime('%d/%m/%Y') }}{% endif %}
-      </span>
-    </div>
-    {% endif %}
-    <div class="cover-meta-item">
-      <span class="cover-meta-label">Versão</span>
-      <span class="cover-meta-value">{{ report.version }}</span>
-    </div>
-    <div class="cover-meta-item">
-      <span class="cover-meta-label">Data</span>
-      <span class="cover-meta-value">{{ report.created_at.strftime('%d/%m/%Y') }}</span>
-    </div>
-    <div class="cover-meta-item">
-      <span class="cover-meta-label">Status</span>
-      <span class="cover-meta-value">{{ report.status }}</span>
-    </div>
-  </div>
-</div>
+  <div class="h2">1.2 Resultados Alcançados</div>
+  <p>As seguintes vulnerabilidades foram encontradas:</p>
 
-<!-- EXECUTIVE SUMMARY -->
-{% if report.executive_summary %}
-<div class="page">
-  <div class="section-title">
-    <div class="section-accent"></div>
-    Resumo Executivo
-  </div>
-  <p style="white-space:pre-wrap">{{ report.executive_summary }}</p>
-</div>
-{% endif %}
-
-<!-- FINDINGS OVERVIEW -->
-<div class="page">
-  <div class="section-title">
-    <div class="section-accent"></div>
-    Visão Geral das Vulnerabilidades
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-box">
-      <div class="stat-box-num color-critical">{{ counts.Critical }}</div>
-      <div class="stat-box-label">Critical</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-box-num color-high">{{ counts.High }}</div>
-      <div class="stat-box-label">High</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-box-num color-medium">{{ counts.Medium }}</div>
-      <div class="stat-box-label">Medium</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-box-num color-low">{{ counts.Low }}</div>
-      <div class="stat-box-label">Low</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-box-num color-info">{{ counts.Informational }}</div>
-      <div class="stat-box-label">Info</div>
-    </div>
-  </div>
-
-  <table class="findings-table">
+  <table class="summary-table">
     <thead>
       <tr>
-        <th>#</th>
+        <th>ID</th>
         <th>Título</th>
         <th>Severidade</th>
         <th>CVSS</th>
-        <th>Componente</th>
-        <th>Status</th>
+        <th>Score</th>
       </tr>
     </thead>
     <tbody>
       {% for vuln in vulns %}
       <tr>
-        <td class="text-muted">{{ loop.index }}</td>
-        <td>{{ vuln.title }}</td>
-        <td>
-          <span class="badge badge-{{ vuln.severity|lower }}">{{ vuln.severity }}</span>
+        <td style="white-space:nowrap;font-family:'Courier New',monospace;font-size:8.5pt">
+          {{ doc_id }}-{{ '%03d'|format(loop.index) }}
         </td>
-        <td>{{ '%.1f'|format(vuln.cvss_score) if vuln.cvss_score else '—' }}</td>
-        <td class="text-muted">{{ vuln.affected_component or '—' }}</td>
-        <td>
-          <span class="badge badge-{{ 'remediated' if vuln.status == 'Remediated' else 'accepted' if 'Accepted' in vuln.status else 'fp' if 'False' in vuln.status else 'open' }}">
-            {{ vuln.status }}
-          </span>
+        <td>{{ vuln.title }}</td>
+        <td class="sc-{{ vuln.severity|lower }}">
+          {{ sev_pt.get(vuln.severity, vuln.severity) }}
+        </td>
+        <td style="text-align:center;font-size:8.5pt">
+          {{ vuln.cvss_vector if vuln.cvss_vector else '—' }}
+        </td>
+        <td style="text-align:center;font-weight:bold">
+          {{ '%.1f'|format(vuln.cvss_score) if vuln.cvss_score else '—' }}
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  {% if report.scope %}
-  <h2>Escopo</h2>
-  <p style="white-space:pre-wrap">{{ report.scope }}</p>
+  <table class="cvss-legend">
+    <tr>
+      <td style="background:#0D0D0D;color:#FFFFFF;border-color:#0D0D0D">Severidade</td>
+      <td style="background:#0D0D0D;color:#FFFFFF;border-color:#0D0D0D">Score</td>
+    </tr>
+    <tr>
+      <td style="background:#BFBFBF;color:#000">Informativa</td>
+      <td style="background:#BFBFBF;color:#000">0</td>
+    </tr>
+    <tr>
+      <td style="background:#00B0F0;color:#000">Baixa</td>
+      <td style="background:#00B0F0;color:#000">0.1 – 3.9</td>
+    </tr>
+    <tr>
+      <td style="background:#FFFF00;color:#000">Média</td>
+      <td style="background:#FFFF00;color:#000">4.0 – 6.9</td>
+    </tr>
+    <tr>
+      <td style="background:#FF0000;color:#fff">Alta</td>
+      <td style="background:#FF0000;color:#fff">7.0 – 8.9</td>
+    </tr>
+    <tr>
+      <td style="background:#7030A0;color:#fff">Crítica</td>
+      <td style="background:#7030A0;color:#fff">9.0 – 10.0</td>
+    </tr>
+  </table>
+
+  <div class="h2">1.3 Principais Impactos</div>
+  {% if counts.Critical > 0 or counts.High > 0 %}
+    <p>As principais vulnerabilidades identificadas com maior potencial de impacto são:</p>
+    <ul>
+      {% for vuln in vulns %}
+        {% if vuln.severity == 'Critical' or vuln.severity == 'High' %}
+        <li>
+          <strong>{{ sev_pt.get(vuln.severity, vuln.severity) }} — {{ vuln.title }}</strong>
+          {% if vuln.impact %}
+            : {{ vuln.impact[:250] }}{% if vuln.impact|length > 250 %}…{% endif %}
+          {% endif %}
+        </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Nenhuma vulnerabilidade de alta criticidade foi identificada.</p>
   {% endif %}
+
+  <div class="h2">1.4 Recomendações</div>
+  <p>Recomenda-se a avaliação e correção das vulnerabilidades que foram reportadas na seção <strong>VULNERABILIDADES ENCONTRADAS</strong>.</p>
+</div>
+
+
+{# ═══════════════ 2. DETALHAMENTO DO ESCOPO ══════════════════════════ #}
+<div class="section">
+  <div class="h1">2. DETALHAMENTO DO ESCOPO</div>
+
+  <div class="h2">2.1 Escopo</div>
+  {% if report.scope %}
+    <p class="pre">{{ report.scope }}</p>
+  {% else %}
+    <p>—</p>
+  {% endif %}
+
+  <div class="h2">2.2 Modalidade de Teste</div>
+  <p>{{ report.report_type }}</p>
+
+  <div class="h2">2.3 Origem</div>
+  <p>
+    Teste conduzido por <strong>{{ report.author.full_name }}</strong>
+    {%- if report.reviewer %}, com revisão de <strong>{{ report.reviewer.full_name }}</strong>{% endif %}.
+  </p>
+
+  <div class="h2">2.4 Período</div>
+  <p>
+    {% if report.start_date %}
+      {{ report.start_date.strftime('%d/%m/%Y') }}
+      {%- if report.end_date %} a {{ report.end_date.strftime('%d/%m/%Y') }}{% endif %}
+    {% else %}
+      Não informado.
+    {% endif %}
+  </p>
+
+  <div class="h2">2.5 Limitações</div>
+  <p>Limitações do escopo e testes não permitidos durante a avaliação:</p>
+  <ul>
+    <li>Ataques de Engenharia Social</li>
+    <li>Ataques de Negação de Serviço (DoS/DDoS)</li>
+  </ul>
+</div>
+
+
+{# ═══════════════════ 3. METODOLOGIA ════════════════════════════════ #}
+<div class="section">
+  <div class="h1">3. METODOLOGIA</div>
 
   {% if report.methodology %}
-  <h2>Metodologia</h2>
-  <p style="white-space:pre-wrap">{{ report.methodology }}</p>
+    <p class="pre">{{ report.methodology }}</p>
+  {% else %}
+    <p>A necessidade, propósito e execução da atividade está fundamentada em sistemas normativos, órgãos reguladores e boas práticas de mercado, mais especificamente:</p>
+    <ul>
+      <li>Política e Normas Corporativas de Segurança da Informação</li>
+      <li>Resoluções do BACEN sobre Segurança Cibernética</li>
+      <li>ISO/IEC 27001</li>
+      <li>The Penetration Testing Execution Standard (PTES)</li>
+      <li>MITRE (mitre.org)</li>
+      <li>Open Web Application Security Project (OWASP)</li>
+    </ul>
   {% endif %}
+
+  <p>O cálculo da classificação de risco utilizada nesse documento tem como base o padrão
+    <strong>CVSS</strong> (https://www.first.org/cvss/specification-document),
+    e visa identificar as principais características das vulnerabilidades, atribuindo um
+    <strong>score</strong> de 0 a 10, de acordo com sua severidade.</p>
 </div>
 
-<!-- DETAILED FINDINGS -->
-{% if vulns %}
-<div class="page">
-  <div class="section-title">
-    <div class="section-accent"></div>
-    Vulnerabilidades Detalhadas
-  </div>
+
+{# ═══════════════ 4. NARRATIVA DO TESTE ══════════════════════════════ #}
+{% if report.conclusion %}
+<div class="section">
+  <div class="h1">4. NARRATIVA DO TESTE</div>
+  <p class="pre">{{ report.conclusion }}</p>
+</div>
+{% endif %}
+
+
+{# ══════════════ 5. VULNERABILIDADES ENCONTRADAS ════════════════════ #}
+<div class="section">
+  <div class="h1">5. VULNERABILIDADES ENCONTRADAS</div>
+  <p>A seguir serão listadas as vulnerabilidades encontradas durante o teste de intrusão realizado.</p>
 
   {% for vuln in vulns %}
-  <div class="vuln-card">
-    <div class="vuln-card-header">
-      <div class="vuln-card-title">{{ loop.index }}. {{ vuln.title }}</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-        <span class="badge badge-{{ vuln.severity|lower }}">{{ vuln.severity }}</span>
-        <span class="badge badge-{{ 'remediated' if vuln.status == 'Remediated' else 'accepted' if 'Accepted' in vuln.status else 'fp' if 'False' in vuln.status else 'open' }}">
-          {{ vuln.status }}
-        </span>
-      </div>
-    </div>
-    <div class="vuln-card-body">
-      <div class="vuln-meta">
-        {% if vuln.cvss_score %}
-        <div class="vuln-meta-item">
-          <span class="vuln-meta-label">CVSS Score</span>
-          <span class="vuln-meta-value">{{ '%.1f'|format(vuln.cvss_score) }}</span>
+  {%- set vuln_id = doc_id + '-' + '%03d'|format(loop.index) -%}
+
+  <div class="h2">5.{{ loop.index }} {{ vuln.title }}</div>
+
+  <table class="vuln-card">
+
+    {# ── Severity row ── #}
+    <tr>
+      <td class="vh" style="width:22%;white-space:nowrap">SEVERIDADE</td>
+      <td class="vs-{{ vuln.severity|lower }}" colspan="4">
+        {{ sev_pt.get(vuln.severity, vuln.severity) }}
+        {%- if vuln.cvss_score %} &nbsp;—&nbsp; CVSS {{ '%.1f'|format(vuln.cvss_score) }}{% endif %}
+      </td>
+    </tr>
+
+    {# ── Affected assets header ── #}
+    <tr><td class="vh" colspan="5">ATIVOS VULNERÁVEIS</td></tr>
+
+    {# ── Asset sub-header ── #}
+    <tr>
+      <td class="vs" style="width:22%">ID</td>
+      <td class="vs" style="width:38%" colspan="2">Hostname / URL / Componente</td>
+      <td class="vs" style="width:20%">CVE / CWE</td>
+      <td class="vs" style="width:20%">Score</td>
+    </tr>
+
+    {# ── Asset data ── #}
+    <tr>
+      <td style="font-family:'Courier New',monospace;font-size:8.5pt;white-space:nowrap;border:1pt solid #BFBFBF">
+        {{ vuln_id }}
+      </td>
+      <td colspan="2" style="border:1pt solid #BFBFBF">
+        {{ vuln.affected_component or 'N/A' }}
+      </td>
+      <td style="border:1pt solid #BFBFBF;font-size:9pt">
+        {%- if vuln.cve_id %}{{ vuln.cve_id }}{% endif %}
+        {%- if vuln.cwe %}
+          {%- if vuln.cve_id %}<br>{% endif %}
+          {{ vuln.cwe.cwe_id }}
+        {%- endif %}
+        {%- if not vuln.cve_id and not vuln.cwe %}—{% endif %}
+      </td>
+      <td style="border:1pt solid #BFBFBF;text-align:center;font-weight:bold">
+        {{ '%.1f'|format(vuln.cvss_score) if vuln.cvss_score else '—' }}
+      </td>
+    </tr>
+
+    {%- if vuln.cvss_vector %}
+    <tr>
+      <td class="vs">CVSS Vector</td>
+      <td colspan="4" style="border:1pt solid #BFBFBF;font-family:'Courier New',monospace;font-size:8pt">
+        {{ vuln.cvss_vector }}
+      </td>
+    </tr>
+    {%- endif %}
+
+    {# ── Description ── #}
+    <tr><td class="vh" colspan="5">DESCRIÇÃO</td></tr>
+    <tr><td class="vb" colspan="5">{{ vuln.description or '—' }}</td></tr>
+
+    {# ── Impact ── #}
+    <tr><td class="vh" colspan="5">IMPACTO</td></tr>
+    <tr><td class="vb" colspan="5">{{ vuln.impact or '—' }}</td></tr>
+
+    {# ── Recommendation ── #}
+    <tr><td class="vh" colspan="5">RECOMENDAÇÃO</td></tr>
+    <tr><td class="vb" colspan="5">{{ vuln.recommendation or '—' }}</td></tr>
+
+    {%- if vuln.references %}
+    {# ── References ── #}
+    <tr><td class="vh" colspan="5">REFERÊNCIAS</td></tr>
+    <tr><td class="vb" colspan="5" style="font-size:9.5pt">{{ vuln.references }}</td></tr>
+    {%- endif %}
+
+    {%- if vuln.evidences %}
+    {# ── Evidence images ── #}
+    <tr><td class="vh" colspan="5">EVIDÊNCIAS</td></tr>
+    {% for ev in vuln.evidences %}
+    <tr>
+      <td class="vb" colspan="5" style="padding:10pt 9pt">
+        <div style="font-weight:bold;font-size:9.5pt;margin-bottom:6pt">
+          Imagem {{ loop.index }}{% if ev.description %} — {{ ev.description }}{% endif %}
         </div>
-        {% endif %}
-        {% if vuln.cve_id %}
-        <div class="vuln-meta-item">
-          <span class="vuln-meta-label">CVE</span>
-          <span class="vuln-meta-value">{{ vuln.cve_id }}</span>
+        {%- set b64 = ev.filename | file_to_b64 -%}
+        {%- if b64 %}
+        <div style="text-align:center;margin-bottom:8pt">
+          <img src="{{ b64 }}"
+               style="max-width:100%;max-height:420pt;display:block;margin:0 auto;border:1pt solid #BFBFBF">
         </div>
-        {% endif %}
-        {% if vuln.affected_component %}
-        <div class="vuln-meta-item">
-          <span class="vuln-meta-label">Componente</span>
-          <span class="vuln-meta-value">{{ vuln.affected_component }}</span>
-        </div>
-        {% endif %}
-      </div>
+        {%- endif %}
+        {%- if ev.body_text %}
+        <div style="font-size:9.5pt;color:#444444;white-space:pre-wrap;margin-top:6pt">{{ ev.body_text }}</div>
+        {%- endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    {%- endif %}
 
-      {% if vuln.cvss_vector %}
-      <div class="vuln-section">
-        <div class="vuln-section-label">CVSS Vector</div>
-        <code>{{ vuln.cvss_vector }}</code>
-      </div>
-      {% endif %}
-
-      {% if vuln.description %}
-      <div class="vuln-section">
-        <div class="vuln-section-label">Descrição</div>
-        <p style="white-space:pre-wrap;margin:0">{{ vuln.description }}</p>
-      </div>
-      {% endif %}
-
-      {% if vuln.proof_of_concept %}
-      <div class="vuln-section">
-        <div class="vuln-section-label">Prova de Conceito</div>
-        <div class="code-block">{{ vuln.proof_of_concept }}</div>
-      </div>
-      {% endif %}
-
-      {% if vuln.impact %}
-      <div class="vuln-section">
-        <div class="vuln-section-label">Impacto</div>
-        <p style="white-space:pre-wrap;margin:0">{{ vuln.impact }}</p>
-      </div>
-      {% endif %}
-
-      {% if vuln.recommendation %}
-      <div class="vuln-section">
-        <div class="vuln-section-label" style="color:#3fb950">Recomendação</div>
-        <p style="white-space:pre-wrap;margin:0">{{ vuln.recommendation }}</p>
-      </div>
-      {% endif %}
-
-      {% if vuln.references %}
-      <div class="vuln-section">
-        <div class="vuln-section-label">Referências</div>
-        <p style="white-space:pre-wrap;margin:0;font-size:9pt">{{ vuln.references }}</p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
+  </table>
   {% endfor %}
 </div>
-{% endif %}
 
-<!-- CONCLUSION -->
-{% if report.conclusion %}
-<div class="page">
-  <div class="section-title">
-    <div class="section-accent"></div>
-    Conclusão
-  </div>
-  <p style="white-space:pre-wrap">{{ report.conclusion }}</p>
+
+{# ═══════════════ 6. PROPRIEDADES DO DOCUMENTO ══════════════════════ #}
+<div class="section">
+  <div class="h1">6. PROPRIEDADES DO DOCUMENTO</div>
+
+  <table class="props-table">
+    <tr>
+      <td colspan="2"
+          style="background:#1F497D;color:#ffffff;font-weight:bold;text-align:center;font-size:11pt;padding:7pt 10pt;border:1pt solid #1F497D">
+        {{ doc_id }}
+      </td>
+    </tr>
+    <tr>
+      <td class="label">TÍTULO</td>
+      <td>{{ report.title }}</td>
+    </tr>
+    <tr>
+      <td class="label">ALVO / PRODUTO</td>
+      <td>
+        {{ report.product.name }}
+        {%- if report.product.owner %} — {{ report.product.owner }}{% endif %}
+        {%- if report.product.target_url %}<br><span style="font-size:9pt;color:#555">{{ report.product.target_url }}</span>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td class="label">TIPO DE TESTE</td>
+      <td>{{ report.report_type }}</td>
+    </tr>
+    <tr>
+      <td class="label">VERSÃO</td>
+      <td>{{ report.version }}</td>
+    </tr>
+    <tr>
+      <td class="label">AUTOR</td>
+      <td>{{ report.author.full_name }}</td>
+    </tr>
+    {% if report.reviewer %}
+    <tr>
+      <td class="label">REVISOR</td>
+      <td>{{ report.reviewer.full_name }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="label">STATUS</td>
+      <td>{{ report.status }}</td>
+    </tr>
+    <tr>
+      <td class="label">CLASSIFICAÇÃO</td>
+      <td>Confidencial</td>
+    </tr>
+  </table>
 </div>
-{% endif %}
+
+
+{# ═══════════════ 7. HISTÓRICO DO DOCUMENTO ════════════════════════ #}
+<div>
+  <div class="h1" style="margin-top:20pt">7. HISTÓRICO DO DOCUMENTO</div>
+
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>VERSÃO</th>
+        <th>DATA</th>
+        <th>AUTOR</th>
+        <th>DESCRIÇÃO</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ report.version }}</td>
+        <td>{{ report.updated_at.strftime('%d/%m/%Y') }}</td>
+        <td>{{ report.author.full_name }}</td>
+        <td>
+          {%- if report.status == 'Final' %}Versão Final
+          {%- elif report.status == 'In Review' %}Em Revisão
+          {%- else %}Rascunho / Em elaboração{% endif -%}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 </body>
 </html>
