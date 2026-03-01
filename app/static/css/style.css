@@ -331,8 +331,8 @@ a:hover { color: #79c0ff; }
   white-space: nowrap;
 }
 
-.badge-critical { background: rgba(248,81,73,.18); color: #f85149; border: 1px solid rgba(248,81,73,.3); }
-.badge-high     { background: rgba(219,109,40,.18); color: #db6d28; border: 1px solid rgba(219,109,40,.3); }
+.badge-critical { background: rgba(188,140,255,.18); color: #bc8cff; border: 1px solid rgba(188,140,255,.3); }
+.badge-high     { background: rgba(248,81,73,.18);  color: #f85149; border: 1px solid rgba(248,81,73,.3);  }
 .badge-medium   { background: rgba(210,153,34,.18); color: #d29922; border: 1px solid rgba(210,153,34,.3); }
 .badge-low      { background: rgba(88,166,255,.18); color: #58a6ff; border: 1px solid rgba(88,166,255,.3); }
 .badge-informational { background: rgba(139,148,158,.18); color: #8b949e; border: 1px solid rgba(139,148,158,.3); }
@@ -387,8 +387,8 @@ a:hover { color: #79c0ff; }
   font-family: monospace;
 }
 
-.cvss-critical { background: rgba(248,81,73,.15); color: #f85149; }
-.cvss-high     { background: rgba(219,109,40,.15); color: #db6d28; }
+.cvss-critical { background: rgba(188,140,255,.15); color: #bc8cff; }
+.cvss-high     { background: rgba(248,81,73,.15);  color: #f85149; }
 .cvss-medium   { background: rgba(210,153,34,.15); color: #d29922; }
 .cvss-low      { background: rgba(88,166,255,.15); color: #58a6ff; }
 
@@ -513,8 +513,8 @@ a:hover { color: #79c0ff; }
   font-weight: 600;
 }
 
-.vuln-critical { background: rgba(248,81,73,.15); color: #f85149; }
-.vuln-high     { background: rgba(219,109,40,.15); color: #db6d28; }
+.vuln-critical { background: rgba(188,140,255,.15); color: #bc8cff; }
+.vuln-high     { background: rgba(248,81,73,.15);  color: #f85149; }
 .vuln-medium   { background: rgba(210,153,34,.15); color: #d29922; }
 .vuln-low      { background: rgba(88,166,255,.15); color: #58a6ff; }
 .vuln-info     { background: rgba(139,148,158,.15); color: #8b949e; }
@@ -619,8 +619,8 @@ a:hover { color: #79c0ff; }
 }
 
 .sev-bar { height: 100%; border-radius: 3px; transition: width .4s ease; min-width: 2px; }
-.sev-bar-critical { background: #f85149; }
-.sev-bar-high     { background: #db6d28; }
+.sev-bar-critical { background: #bc8cff; }
+.sev-bar-high     { background: #f85149; }
 .sev-bar-medium   { background: #d29922; }
 .sev-bar-low      { background: #58a6ff; }
 .sev-bar-info     { background: #8b949e; }

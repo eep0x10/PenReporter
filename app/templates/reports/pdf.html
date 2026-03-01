@@ -14,15 +14,7 @@
 
   @top-left  { content: ''; }
   @top-right {
-    content: 'CONFIDENCIAL';
-    font-size: 8pt;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    color: #444444;
-    border: 1pt solid #444444;
-    padding: 2pt 6pt;
-    margin-top: 4pt;
+    content: '';
   }
   @bottom-left {
     content: '{{ doc_id }}';
@@ -185,17 +177,17 @@ li { margin-bottom: 3pt; }
 .summary-table tr:nth-child(even) td { background: #F5F5F5; }
 
 /* Severity cells */
-.sc-critical     { background:#7030A0; color:#ffffff; font-weight:bold; text-align:center; }
-.sc-high         { background:#FF0000; color:#ffffff; font-weight:bold; text-align:center; }
-.sc-medium       { background:#FFFF00; color:#000000; font-weight:bold; text-align:center; }
-.sc-low          { background:#00B0F0; color:#000000; font-weight:bold; text-align:center; }
-.sc-informational{ background:#BFBFBF; color:#000000; font-weight:bold; text-align:center; }
+.sc-critical     { background:#7030A0 !important; color:#ffffff; font-weight:bold; text-align:center; }
+.sc-high         { background:#FF0000 !important; color:#ffffff; font-weight:bold; text-align:center; }
+.sc-medium       { background:#FFFF00 !important; color:#000000; font-weight:bold; text-align:center; }
+.sc-low          { background:#00B0F0 !important; color:#000000; font-weight:bold; text-align:center; }
+.sc-informational{ background:#BFBFBF !important; color:#000000; font-weight:bold; text-align:center; }
 
 /* ── CVSS Legend (TABLE 2) ───────────────────────────────────── */
 .cvss-legend {
   border-collapse: collapse;
   font-size: 9pt;
-  margin: 4pt 0 14pt;
+  margin: 4pt auto 14pt;
 }
 
 .cvss-legend td {
@@ -314,9 +306,7 @@ li { margin-bottom: 3pt; }
 
 {# ═══════════════════════════════ CAPA ════════════════════════════════ #}
 <div class="cover">
-  <div class="cover-topbar">
-    <div class="cover-confidential">CONFIDENCIAL</div>
-  </div>
+  
 
   <div class="cover-body">
     <div class="cover-main-title">RELATÓRIO DE TESTE DE INTRUSÃO</div>
@@ -383,32 +373,7 @@ li { margin-bottom: 3pt; }
     </tbody>
   </table>
 
-  <table class="cvss-legend">
-    <tr>
-      <td style="background:#0D0D0D;color:#FFFFFF;border-color:#0D0D0D">Severidade</td>
-      <td style="background:#0D0D0D;color:#FFFFFF;border-color:#0D0D0D">Score</td>
-    </tr>
-    <tr>
-      <td style="background:#BFBFBF;color:#000">Informativa</td>
-      <td style="background:#BFBFBF;color:#000">0</td>
-    </tr>
-    <tr>
-      <td style="background:#00B0F0;color:#000">Baixa</td>
-      <td style="background:#00B0F0;color:#000">0.1 – 3.9</td>
-    </tr>
-    <tr>
-      <td style="background:#FFFF00;color:#000">Média</td>
-      <td style="background:#FFFF00;color:#000">4.0 – 6.9</td>
-    </tr>
-    <tr>
-      <td style="background:#FF0000;color:#fff">Alta</td>
-      <td style="background:#FF0000;color:#fff">7.0 – 8.9</td>
-    </tr>
-    <tr>
-      <td style="background:#7030A0;color:#fff">Crítica</td>
-      <td style="background:#7030A0;color:#fff">9.0 – 10.0</td>
-    </tr>
-  </table>
+  
 
   <div class="h2">1.3 Principais Impactos</div>
   {% if counts.Critical > 0 or counts.High > 0 %}
@@ -495,6 +460,34 @@ li { margin-bottom: 3pt; }
     <strong>CVSS</strong> (https://www.first.org/cvss/specification-document),
     e visa identificar as principais características das vulnerabilidades, atribuindo um
     <strong>score</strong> de 0 a 10, de acordo com sua severidade.</p>
+    <center>
+      <table class="cvss-legend">
+    <tr>
+      <td style="background:#0D0D0D;color:#FFFFFF;border-color:#0D0D0D">Severidade</td>
+      <td style="background:#0D0D0D;color:#FFFFFF;border-color:#0D0D0D">Score</td>
+    </tr>
+    <tr>
+      <td style="background:#BFBFBF;color:#000">Informativa</td>
+      <td style="background:#BFBFBF;color:#000">0</td>
+    </tr>
+    <tr>
+      <td style="background:#00B0F0;color:#000">Baixa</td>
+      <td style="background:#00B0F0;color:#000">0.1 – 3.9</td>
+    </tr>
+    <tr>
+      <td style="background:#FFFF00;color:#000">Média</td>
+      <td style="background:#FFFF00;color:#000">4.0 – 6.9</td>
+    </tr>
+    <tr>
+      <td style="background:#FF0000;color:#fff">Alta</td>
+      <td style="background:#FF0000;color:#fff">7.0 – 8.9</td>
+    </tr>
+    <tr>
+      <td style="background:#7030A0;color:#fff">Crítica</td>
+      <td style="background:#7030A0;color:#fff">9.0 – 10.0</td>
+    </tr>
+  </table>
+  </center>
 </div>
 
 
@@ -515,6 +508,7 @@ li { margin-bottom: 3pt; }
   {% for vuln in vulns %}
   {%- set vuln_id = doc_id + '-' + '%03d'|format(loop.index) -%}
 
+  {% if not loop.first %}<div style="page-break-before:always"></div>{% endif %}
   <div class="h2">5.{{ loop.index }} {{ vuln.title }}</div>
 
   <table class="vuln-card">

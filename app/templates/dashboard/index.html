@@ -105,6 +105,7 @@
               <tr>
                 <th>Título</th>
                 <th>Produto</th>
+                <th>Analista</th>
                 <th>Status</th>
                 <th>Risco</th>
               </tr>
@@ -118,6 +119,7 @@
                   </a>
                 </td>
                 <td class="text-muted small">{{ r.product.name }}</td>
+                <td class="text-muted small">{{ r.author.full_name }}</td>
                 <td><span class="badge-status badge-{{ r.status|lower|replace(' ','-') }}">{{ r.status }}</span></td>
                 <td>
                   {% if r.overall_risk %}
@@ -203,7 +205,7 @@ const statusCounts = {{ status_counts | tojson }};
 const cweChartData = {{ cwe_chart_data | tojson }};
 
 const SEV_COLORS = {
-  'Critical': '#f85149', 'High': '#db6d28',
+  'Critical': '#bc8cff', 'High': '#f85149',
   'Medium': '#d29922', 'Low': '#58a6ff', 'Informational': '#8b949e'
 };
 const STATUS_COLORS = {
